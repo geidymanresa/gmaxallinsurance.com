@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotiza tu seguro</title>
+<style>
+  :root{
+    --blue:#1E4FA0;
+    --navy:#0B2D6E;
+    --gold:#EFAF3E;
+    --gold-deep:#D69428;
+    --canvas:#F6F7FB;
+    --white:#FFFFFF;
+    --slate:#33415C;
+    --slate-light:#8B93A7;
+    --line:#E7EAF2;
+    --danger:#D14343;
+    --success:#1E9E6B;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:var(--canvas); color:var(--slate); padding-bottom:70px;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:20px 18px; text-align:center;
+  }
+  header h1{ margin:0; font-size:20px; font-weight:700; }
+  header p{ margin:6px 0 0; font-size:13.5px; color:#C7D5EE; }
+
+  .wrap{ max-width:640px; margin:0 auto; padding:18px; }
+
+  /* Indicador de pasos */
+  .steps-indicator{ display:flex; justify-content:space-between; margin-bottom:22px; gap:4px; }
+  .steps-indicator .dot-wrap{ flex:1; text-align:center; }
+  .steps-indicator .dot{
+    width:28px; height:28px; border-radius:50%; background:#fff; border:2px solid var(--line);
+    color:var(--slate-light); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 6px; transition:all .2s;
+  }
+  .steps-indicator .dot.active{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .steps-indicator .dot.done{ background:var(--success); border-color:var(--success); color:#fff; }
+  .steps-indicator .label{ font-size:10.5px; color:var(--slate-light); line-height:1.2; }
+  .steps-indicator .label.active{ color:var(--blue); font-weight:700; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:0 2px 10px rgba(11,45,110,0.05); }
+  .step{ display:none; }
+  .step.active{ display:block; animation:fadein .25s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  h2{ font-size:18px; margin:0 0 4px; color:var(--navy); }
+  .step-sub{ font-size:13.5px; color:var(--slate-light); margin:0 0 20px; }
+
+  .form-row{ margin-bottom:16px; }
+  .form-row label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--slate); }
+  .form-row-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-row-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .form-row-2, .form-row-3{ grid-template-columns:1fr; } }
+
+  input[type=text], input[type=email], input[type=tel], select, textarea{
+    width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:15px; font-family:inherit; color:var(--slate); background:#fff;
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--blue); }
+  textarea{ resize:vertical; }
+
+  .radio-group{ display:flex; flex-wrap:wrap; gap:10px; }
+  .radio-pill{
+    border:1.5px solid var(--line); border-radius:10px; padding:10px 16px; font-size:14px; font-weight:600;
+    cursor:pointer; color:var(--slate); background:#fff; user-select:none; transition:all .15s;
+  }
+  .radio-pill input{ display:none; }
+  .radio-pill.selected{ border-color:var(--blue); background:#EAF1FC; color:var(--blue); }
+
+  .error-text{ color:var(--danger); font-size:12.5px; margin-top:5px; display:none; }
+  .field-error input, .field-error select{ border-color:var(--danger); }
+  .field-error .error-text{ display:block; }
+
+  .info-btn{
+    display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%;
+    background:var(--line); color:var(--slate); font-size:12px; font-weight:700; border:none; cursor:pointer;
+    margin-left:6px; vertical-align:middle;
+  }
+  .info-box{
+    display:none; background:#EAF1FC; border:1px solid #C7D9F3; border-radius:10px; padding:12px 14px;
+    font-size:13px; color:var(--navy); margin-top:8px; line-height:1.5;
+  }
+  .info-box.open{ display:block; }
+
+  .sub-card{
+    border:1.5px solid var(--line); border-radius:12px; padding:16px; margin-top:14px; background:#FAFBFD;
+  }
+  .sub-card h3{ margin:0 0 12px; font-size:14.5px; color:var(--blue); }
+
+  .nav-buttons{ display:flex; gap:12px; margin-top:24px; }
+  button.btn-primary, a.btn-primary{
+    flex:1; background:var(--gold); color:var(--navy); border:none; border-radius:10px; padding:14px;
+    font-size:15px; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; display:block;
+  }
+  button.btn-primary:hover{ background:var(--gold-deep); }
+  button.btn-secondary{
+    background:#fff; color:var(--slate); border:1.5px solid var(--line); border-radius:10px; padding:14px 18px;
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  button:disabled{ opacity:0.6; cursor:not-allowed; }
+
+  .call-bar{
+    position:fixed; bottom:0; left:0; right:0; background:var(--navy); color:#fff; padding:12px 18px;
+    display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:13.5px; z-index:50;
+  }
+  .call-bar a{ background:var(--gold); color:var(--navy); font-weight:700; padding:9px 16px; border-radius:8px; text-decoration:none; font-size:13.5px; white-space:nowrap; }
+
+  .thankyou{ text-align:center; padding:30px 10px; }
+  .thankyou .icon{ font-size:44px; margin-bottom:10px; }
+  .thankyou h2{ font-size:21px; }
+  .thankyou p{ font-size:14.5px; color:var(--slate); line-height:1.6; }
+
+  .top-error{ background:#FBEAEA; border:1px solid #F3C3C3; color:var(--danger); border-radius:10px; padding:12px 14px; font-size:13.5px; margin-bottom:16px; display:none; }
+
+  .vin-hint{ font-size:12px; color:var(--slate-light); margin-top:5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GMAX All Insurance — Cotiza tu seguro</h1>
+  <p>Cuéntanos un poco de ti — te contactamos con tu cotización.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="steps-indicator" id="stepsIndicator"></div>
+
+  <div class="card">
+
+    <div class="top-error" id="topError"></div>
+
+    <!-- ===== PASO 1: Información principal ===== -->
+    <section class="step active" data-step="1">
+      <h2>Tu información</h2>
+      <p class="step-sub">Empecemos con tus datos y qué seguro estás buscando.</p>
+
+      <div class="form-row-3">
+        <div class="form-row" id="fld-nombre"><label>Nombre</label><input type="text" id="p1-nombre"><div class="error-text">Escribe tu nombre.</div></div>
+        <div class="form-row"><label>Segundo nombre</label><input type="text" id="p1-nombre2"></div>
+        <div class="form-row" id="fld-apellido"><label>Apellido(s)</label><input type="text" id="p1-apellido"><div class="error-text">Escribe tu apellido.</div></div>
+      </div>
+      <div class="form-row" id="fld-direccion">
+        <label>Dirección</label>
+        <input type="text" id="p1-direccion" placeholder="Calle, número, ciudad, estado, código postal">
+        <div class="error-text">Escribe tu dirección.</div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" id="fld-telefono"><label>Teléfono</label><input type="tel" id="p1-telefono" placeholder="(555) 555-5555"><div class="error-text">Escribe un teléfono válido.</div></div>
+        <div class="form-row" id="fld-correo"><label>Correo electrónico</label><input type="email" id="p1-correo" placeholder="tu@correo.com"><div class="error-text">Escribe un correo válido.</div></div>
+      </div>
+      <div class="form-row" id="fld-producto">
+        <label>¿Qué seguro estás necesitando?</label>
+        <select id="p1-producto">
+          <option value="">Selecciona una opción</option>
+          <option value="auto_personal">Auto personal</option>
+          <option value="auto_comercial">Auto comercial / Trucking</option>
+          <option value="motocicleta">Motocicleta</option>
+          <option value="home">Casa (Home)</option>
+          <option value="vida">Vida</option>
+          <option value="medico">Salud / Médico</option>
+          <option value="renters">Renters</option>
+          <option value="otro">Otro</option>
+        </select>
+        <div class="error-text">Selecciona qué seguro necesitas.</div>
+      </div>
+      <div class="form-row">
+        <label>Comentarios (opcional)</label>
+        <textarea id="p1-comentarios" rows="3" placeholder="Cuéntanos cualquier detalle que nos ayude a cotizarte mejor"></textarea>
+      </div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-primary" onclick="onStep1Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 2: Elegibilidad (mostrado solo si es auto) ===== -->
+    <section class="step" data-step="2">
+      <h2>Un par de preguntas rápidas</h2>
+      <p class="step-sub">Esto nos ayuda a encontrarte mejores opciones. Puedes dejarlas en blanco si prefieres.</p>
+
+      <div class="form-row">
+        <label>¿Has tenido seguro de auto de forma continua en los últimos 6 meses?</label>
+        <div class="radio-group" id="rg-seguro6meses">
+          <label class="radio-pill"><input type="radio" name="seguro6meses" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="seguro6meses" value="no"> No</label>
+          <label class="radio-pill"><input type="radio" name="seguro6meses" value=""> Prefiero no decir</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>¿Eres dueño(a) de casa o alguna propiedad?</label>
+        <div class="radio-group" id="rg-dueñocasa">
+          <label class="radio-pill"><input type="radio" name="dueñocasa" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="dueñocasa" value="no"> No</label>
+          <label class="radio-pill"><input type="radio" name="dueñocasa" value=""> Prefiero no decir</label>
+        </div>
+      </div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(1)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="goToStep(3)">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 3: Conductores ===== -->
+    <section class="step" data-step="3">
+      <h2>Conductores</h2>
+      <p class="step-sub">¿Cuántas personas van a manejar los vehículos que quieres asegurar?</p>
+
+      <div class="form-row">
+        <label>Cantidad de conductores</label>
+        <select id="p3-cantidad" onchange="renderDrivers()">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+
+      <div id="driversContainer"></div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(2)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="onStep3Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 4: Vehículos ===== -->
+    <section class="step" data-step="4">
+      <h2>Vehículos</h2>
+      <p class="step-sub">Cuéntanos qué vehículos quieres asegurar.</p>
+
+      <div class="form-row">
+        <label>Cantidad de vehículos</label>
+        <select id="p4-cantidad" onchange="renderVehicles()">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+
+      <div id="vehiclesContainer"></div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(3)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="onStep4Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 5: Enviar ===== -->
+    <section class="step" data-step="5">
+      <h2>¡Ya casi terminamos!</h2>
+      <p class="step-sub">Revisa que todo esté correcto y envía tu solicitud. Un agente comenzará a trabajar en tu cotización.</p>
+
+      <div id="summaryBox" style="font-size:13.5px; line-height:1.7; background:var(--canvas); border-radius:10px; padding:14px 16px;"></div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" id="step5BackBtn" onclick="goBackFromStep5()">Atrás</button>
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitQuote()">Enviar solicitud</button>
+      </div>
+    </section>
+
+    <!-- ===== Pantalla de agradecimiento ===== -->
+    <section class="step" id="thankyouStep">
+      <div class="thankyou">
+        <div class="icon">✅</div>
+        <h2>¡Gracias por confiar en nosotros!</h2>
+        <p id="thankyouText"></p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="call-bar">
+  <span>¿Prefieres hablar con un agente ahora?</span>
+  <a href="tel:+18324800217">Llamar</a>
+</div>
+
+<script>
+  document.querySelector('.call-bar a').href = 'tel:+18324800217';
+
+  const SUPABASE_FUNCTION_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co/functions/v1/submit-public-quote';
+  const SUPABASE_ANON_KEY = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+
+  const AUTO_PRODUCTS = ['auto_personal', 'auto_comercial', 'motocicleta'];
+  const PRODUCT_LABELS = {
+    auto_personal: 'Auto personal', auto_comercial: 'Auto comercial / Trucking', motocicleta: 'Motocicleta',
+    home: 'Casa (Home)', vida: 'Vida', medico: 'Salud / Médico', renters: 'Renters', otro: 'Otro'
+  };
+  const COVERAGE_LABELS = { liability: 'Liability', full: 'Full Coverage', otra: 'Otra' };
+  const ID_TYPE_LABELS = { licencia: 'Licencia de conducir', matricula: 'Matrícula', pasaporte: 'Pasaporte' };
+  const CIVIL_LABELS = { soltero: 'Soltero(a)', casado: 'Casado(a)', divorciado: 'Divorciado(a)', viudo: 'Viudo(a)' };
+
+  let currentStep = 1;
+  let isAutoFlow = false;
+  const STEP_LABELS_AUTO = ['Tu información', 'Preguntas', 'Conductores', 'Vehículos', 'Enviar'];
+
+  // ---------- Indicador de pasos ----------
+  function renderStepsIndicator(){
+    const wrap = document.getElementById('stepsIndicator');
+    if(!isAutoFlow){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = STEP_LABELS_AUTO.map((label, i) => {
+      const n = i + 1;
+      let cls = 'dot';
+      if(n < currentStep) cls += ' done';
+      if(n === currentStep) cls += ' active';
+      return `<div class="dot-wrap"><div class="${cls}">${n < currentStep ? '✓' : n}</div><div class="label${n === currentStep ? ' active' : ''}">${label}</div></div>`;
+    }).join('');
+  }
+
+  function goToStep(n){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const target = document.querySelector(`.step[data-step="${n}"]`);
+    if(target) target.classList.add('active');
+    currentStep = n;
+    renderStepsIndicator();
+    document.getElementById('topError').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if(n === 3) renderDrivers();
+    if(n === 4) renderVehicles();
+    if(n === 5) renderSummary();
+  }
+
+  function showTopError(msg){
+    const box = document.getElementById('topError');
+    box.textContent = msg;
+    box.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function markFieldError(fieldId, hasError){
+    const el = document.getElementById(fieldId);
+    if(!el) return;
+    el.classList.toggle('field-error', hasError);
+  }
+
+  // ---------- Paso 1 ----------
+  function onStep1Continue(){
+    const nombre = document.getElementById('p1-nombre').value.trim();
+    const apellido = document.getElementById('p1-apellido').value.trim();
+    const direccion = document.getElementById('p1-direccion').value.trim();
+    const telefono = document.getElementById('p1-telefono').value.trim();
+    const correo = document.getElementById('p1-correo').value.trim();
+    const producto = document.getElementById('p1-producto').value;
+
+    let ok = true;
+    markFieldError('fld-nombre', !nombre); if(!nombre) ok = false;
+    markFieldError('fld-apellido', !apellido); if(!apellido) ok = false;
+    markFieldError('fld-direccion', !direccion); if(!direccion) ok = false;
+    markFieldError('fld-telefono', telefono.length < 7); if(telefono.length < 7) ok = false;
+    const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+    markFieldError('fld-correo', !correoValido); if(!correoValido) ok = false;
+    markFieldError('fld-producto', !producto); if(!producto) ok = false;
+
+    if(!ok){ showTopError('Completa los campos marcados en rojo antes de continuar.'); return; }
+
+    isAutoFlow = AUTO_PRODUCTS.includes(producto);
+
+    if(isAutoFlow){
+      goToStep(2);
+    } else {
+      // No es un seguro de auto: no hace falta el resto del wizard — se envía directo.
+      submitQuote();
+    }
+  }
+
+  // ---------- Paso 3: Conductores ----------
+  function renderDrivers(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    const container = document.getElementById('driversContainer');
+    let html = '';
+    for(let i = 1; i <= qty; i++){
+      html += `
+        <div class="sub-card">
+          <h3>Conductor ${i}</h3>
+          <div class="form-row-3">
+            <div class="form-row" id="fld-drv-nombre-${i}"><label>Nombre</label><input type="text" class="drv-nombre" data-idx="${i}"><div class="error-text">Requerido.</div></div>
+            <div class="form-row"><label>Segundo nombre</label><input type="text" class="drv-nombre2" data-idx="${i}"></div>
+            <div class="form-row" id="fld-drv-apellido-${i}"><label>Apellido(s)</label><input type="text" class="drv-apellido" data-idx="${i}"><div class="error-text">Requerido.</div></div>
+          </div>
+          ${i === 1 ? `
+          <div class="form-row" id="fld-drv-direccion-1">
+            <label>Dirección</label>
+            <input type="text" class="drv-direccion" data-idx="1">
+            <div class="error-text">Requerido.</div>
+          </div>` : ''}
+          <div class="form-row-2">
+            <div class="form-row" id="fld-drv-nacimiento-${i}">
+              <label>Fecha de nacimiento</label>
+              <input type="text" class="drv-nacimiento" data-idx="${i}" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)">
+              <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+            </div>
+            <div class="form-row" id="fld-drv-estadocivil-${i}">
+              <label>Estado civil</label>
+              <select class="drv-estadocivil" data-idx="${i}">
+                <option value="">Selecciona</option>
+                <option value="soltero">Soltero(a)</option>
+                <option value="casado">Casado(a)</option>
+                <option value="divorciado">Divorciado(a)</option>
+                <option value="viudo">Viudo(a)</option>
+              </select>
+              <div class="error-text">Requerido.</div>
+            </div>
+          </div>
+          <div class="form-row" id="fld-drv-idtype-${i}">
+            <label>Tipo de identificación</label>
+            <div class="radio-group" data-idtype-group="${i}">
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="licencia"> Licencia de conducir</label>
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="matricula"> Matrícula</label>
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="pasaporte"> Pasaporte</label>
+            </div>
+            <div class="error-text">Selecciona un tipo de identificación.</div>
+          </div>
+          <div class="form-row" id="fld-drv-idnumero-${i}">
+            <label>Número de identificación</label>
+            <input type="text" class="drv-idnumero" data-idx="${i}">
+            <div class="error-text">Requerido.</div>
+          </div>
+        </div>
+      `;
+    }
+    container.innerHTML = html;
+    // Pintar los "pills" de radio al seleccionarlos
+    container.querySelectorAll('.radio-pill input[type=radio]').forEach(input => {
+      input.addEventListener('change', function(){
+        this.closest('.radio-group').querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+        this.closest('.radio-pill').classList.add('selected');
+      });
+    });
+  }
+
+  function onStep3Continue(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    let ok = true;
+    for(let i = 1; i <= qty; i++){
+      const nombre = document.querySelector(`.drv-nombre[data-idx="${i}"]`).value.trim();
+      const apellido = document.querySelector(`.drv-apellido[data-idx="${i}"]`).value.trim();
+      const nacimiento = document.querySelector(`.drv-nacimiento[data-idx="${i}"]`).value.trim();
+      const estadocivil = document.querySelector(`.drv-estadocivil[data-idx="${i}"]`).value;
+      const idtype = document.querySelector(`input[name="idtype-${i}"]:checked`);
+      const idnumero = document.querySelector(`.drv-idnumero[data-idx="${i}"]`).value.trim();
+
+      markFieldError(`fld-drv-nombre-${i}`, !nombre); if(!nombre) ok = false;
+      markFieldError(`fld-drv-apellido-${i}`, !apellido); if(!apellido) ok = false;
+      markFieldError(`fld-drv-nacimiento-${i}`, !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError(`fld-drv-estadocivil-${i}`, !estadocivil); if(!estadocivil) ok = false;
+      markFieldError(`fld-drv-idtype-${i}`, !idtype); if(!idtype) ok = false;
+      markFieldError(`fld-drv-idnumero-${i}`, !idnumero); if(!idnumero) ok = false;
+
+      if(i === 1){
+        const direccion = document.querySelector('.drv-direccion[data-idx="1"]').value.trim();
+        markFieldError('fld-drv-direccion-1', !direccion); if(!direccion) ok = false;
+      }
+    }
+    if(!ok){ showTopError('Completa los datos de todos los conductores antes de continuar.'); return; }
+    goToStep(4);
+  }
+
+  function collectDrivers(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    const direccionPrincipal = document.querySelector('.drv-direccion[data-idx="1"]')?.value.trim() || '';
+    const drivers = [];
+    for(let i = 1; i <= qty; i++){
+      const idtype = document.querySelector(`input[name="idtype-${i}"]:checked`);
+      drivers.push({
+        nombre: document.querySelector(`.drv-nombre[data-idx="${i}"]`).value.trim(),
+        nombre2: document.querySelector(`.drv-nombre2[data-idx="${i}"]`).value.trim(),
+        apellido: document.querySelector(`.drv-apellido[data-idx="${i}"]`).value.trim(),
+        direccion: i === 1 ? direccionPrincipal : direccionPrincipal, // los demás usan la misma dirección
+        fecha_nacimiento: toISODate(document.querySelector(`.drv-nacimiento[data-idx="${i}"]`).value.trim()),
+        estado_civil: document.querySelector(`.drv-estadocivil[data-idx="${i}"]`).value,
+        id_type: idtype ? idtype.value : '',
+        id_numero: document.querySelector(`.drv-idnumero[data-idx="${i}"]`).value.trim()
+      });
+    }
+    return drivers;
+  }
+
+  // ---------- Paso 4: Vehículos ----------
+  function renderVehicles(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    const container = document.getElementById('vehiclesContainer');
+    let html = '';
+    for(let i = 1; i <= qty; i++){
+      html += `
+        <div class="sub-card">
+          <h3>Vehículo ${i}</h3>
+          <div class="form-row" id="fld-veh-vin-${i}">
+            <label>VIN (número de identificación del vehículo)</label>
+            <input type="text" class="veh-vin" data-idx="${i}" maxlength="17" style="text-transform:uppercase;" oninput="onVinInput(this)">
+            <div class="vin-hint" id="vin-hint-${i}">Debe tener 17 caracteres.</div>
+            <div class="error-text">El VIN debe tener exactamente 17 caracteres válidos.</div>
+          </div>
+          <div class="form-row" id="fld-veh-cobertura-${i}">
+            <label>Cobertura
+              <button type="button" class="info-btn" onclick="toggleInfo('info-liability-${i}')">?</button>
+            </label>
+            <div class="info-box" id="info-liability-${i}">
+              <strong>Liability:</strong> es la cobertura mínima requerida por ley. Paga por los daños y lesiones que tú le causas a otras personas o a otros vehículos cuando el accidente es tu culpa. No cubre daños a tu propio vehículo.<br><br>
+              <strong>Full Coverage:</strong> incluye Liability, más cobertura para tu propio vehículo — ya sea por choque (Collision) o por otros eventos como robo, vandalismo, incendio o fenómenos naturales (Comprehensive).
+            </div>
+            <div class="radio-group" style="margin-top:8px;" data-cov-group="${i}">
+              <label class="radio-pill"><input type="radio" name="cobertura-${i}" value="liability" onchange="onCoverageChange(${i})"> Liability</label>
+              <label class="radio-pill"><input type="radio" name="cobertura-${i}" value="full" onchange="onCoverageChange(${i})"> Full Coverage</label>
+              <label class="radio-pill"><input type="radio" name="cobertura-${i}" value="otra" onchange="onCoverageChange(${i})"> Otra</label>
+            </div>
+            <div class="error-text">Selecciona una cobertura.</div>
+          </div>
+          <div class="form-row" id="fld-veh-otra-${i}" style="display:none;">
+            <label>¿Cuál otra cobertura?</label>
+            <input type="text" class="veh-otra-detalle" data-idx="${i}">
+            <div class="error-text">Especifica qué cobertura necesitas.</div>
+          </div>
+          <div class="form-row" id="fld-veh-deducible-${i}" style="display:none;">
+            <label>Deducible
+              <button type="button" class="info-btn" onclick="toggleInfo('info-deducible-${i}')">?</button>
+            </label>
+            <div class="info-box" id="info-deducible-${i}">
+              El deducible es la cantidad que tú pagas de tu bolsillo antes de que la aseguradora empiece a cubrir el resto del daño a tu vehículo. Un deducible más alto generalmente baja tu mensualidad, pero pagarías más de tu bolsillo si tienes un accidente.
+            </div>
+            <select class="veh-deducible" data-idx="${i}" style="margin-top:8px;">
+              <option value="">Selecciona</option>
+              <option value="500">$500</option>
+              <option value="1000">$1,000</option>
+              <option value="2000">$2,000</option>
+            </select>
+            <div class="error-text">Selecciona un deducible.</div>
+          </div>
+        </div>
+      `;
+    }
+    container.innerHTML = html;
+    container.querySelectorAll('.radio-pill input[type=radio]').forEach(input => {
+      input.addEventListener('change', function(){
+        this.closest('.radio-group').querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+        this.closest('.radio-pill').classList.add('selected');
+      });
+    });
+  }
+
+  function onCoverageChange(i){
+    const val = document.querySelector(`input[name="cobertura-${i}"]:checked`)?.value;
+    document.getElementById(`fld-veh-otra-${i}`).style.display = val === 'otra' ? 'block' : 'none';
+    document.getElementById(`fld-veh-deducible-${i}`).style.display = val === 'full' ? 'block' : 'none';
+  }
+
+  function toggleInfo(id){
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  function onVinInput(el){
+    el.value = el.value.toUpperCase();
+    const hint = document.getElementById('vin-hint-' + el.dataset.idx);
+    if(el.value.length === 0){ hint.textContent = 'Debe tener 17 caracteres.'; hint.style.color = ''; return; }
+    if(isValidVin(el.value)){ hint.textContent = '✓ VIN válido.'; hint.style.color = 'var(--success)'; }
+    else { hint.textContent = `Tiene ${el.value.length} de 17 caracteres, o contiene letras no válidas (I, O, Q no se usan en un VIN).`; hint.style.color = 'var(--danger)'; }
+  }
+
+  function isValidVin(vin){
+    return /^[A-HJ-NPR-Z0-9]{17}$/.test((vin || '').trim());
+  }
+
+  function onStep4Continue(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    let ok = true;
+    for(let i = 1; i <= qty; i++){
+      const vin = document.querySelector(`.veh-vin[data-idx="${i}"]`).value.trim();
+      const cobertura = document.querySelector(`input[name="cobertura-${i}"]:checked`);
+      markFieldError(`fld-veh-vin-${i}`, !isValidVin(vin)); if(!isValidVin(vin)) ok = false;
+      markFieldError(`fld-veh-cobertura-${i}`, !cobertura); if(!cobertura) ok = false;
+      if(cobertura && cobertura.value === 'otra'){
+        const detalle = document.querySelector(`.veh-otra-detalle[data-idx="${i}"]`).value.trim();
+        markFieldError(`fld-veh-otra-${i}`, !detalle); if(!detalle) ok = false;
+      }
+      if(cobertura && cobertura.value === 'full'){
+        const deducible = document.querySelector(`.veh-deducible[data-idx="${i}"]`).value;
+        markFieldError(`fld-veh-deducible-${i}`, !deducible); if(!deducible) ok = false;
+      }
+    }
+    if(!ok){ showTopError('Revisa los datos de los vehículos — hay algo pendiente o el VIN no es válido.'); return; }
+    goToStep(5);
+  }
+
+  function collectVehicles(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    const vehicles = [];
+    for(let i = 1; i <= qty; i++){
+      const cobertura = document.querySelector(`input[name="cobertura-${i}"]:checked`)?.value || '';
+      vehicles.push({
+        vin: document.querySelector(`.veh-vin[data-idx="${i}"]`).value.trim().toUpperCase(),
+        cobertura,
+        otra_detalle: cobertura === 'otra' ? document.querySelector(`.veh-otra-detalle[data-idx="${i}"]`).value.trim() : '',
+        deducible: cobertura === 'full' ? document.querySelector(`.veh-deducible[data-idx="${i}"]`).value : ''
+      });
+    }
+    return vehicles;
+  }
+
+  // ---------- Paso 5: resumen y envío ----------
+  function renderSummary(){
+    const nombre = document.getElementById('p1-nombre').value.trim();
+    const producto = document.getElementById('p1-producto').value;
+    let html = `<div><strong>Nombre:</strong> ${nombre} ${document.getElementById('p1-apellido').value.trim()}</div>`;
+    html += `<div><strong>Seguro solicitado:</strong> ${PRODUCT_LABELS[producto] || producto}</div>`;
+    if(isAutoFlow){
+      const drivers = collectDrivers();
+      const vehicles = collectVehicles();
+      html += `<div style="margin-top:8px;"><strong>Conductores:</strong> ${drivers.length}</div>`;
+      html += `<div><strong>Vehículos:</strong> ${vehicles.length}</div>`;
+    }
+    document.getElementById('summaryBox').innerHTML = html;
+    document.getElementById('step5BackBtn').style.display = isAutoFlow ? 'block' : 'none';
+  }
+
+  function goBackFromStep5(){
+    goToStep(isAutoFlow ? 4 : 1);
+  }
+
+  async function submitQuote(){
+    const submitBtn = document.getElementById('submitBtn');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Enviando...'; }
+
+    const producto = document.getElementById('p1-producto').value;
+    const payload = {
+      principal: {
+        nombre: document.getElementById('p1-nombre').value.trim(),
+        nombre2: document.getElementById('p1-nombre2').value.trim(),
+        apellido: document.getElementById('p1-apellido').value.trim(),
+        direccion: document.getElementById('p1-direccion').value.trim(),
+        telefono: document.getElementById('p1-telefono').value.trim(),
+        correo: document.getElementById('p1-correo').value.trim(),
+        producto,
+        comentarios: document.getElementById('p1-comentarios').value.trim()
+      }
+    };
+
+    if(isAutoFlow){
+      payload.elegibilidad = {
+        seguro_6meses: (document.querySelector('input[name="seguro6meses"]:checked')?.value) || null,
+        dueño_casa: (document.querySelector('input[name="dueñocasa"]:checked')?.value) || null
+      };
+      payload.conductores = collectDrivers();
+      payload.vehiculos = collectVehicles();
+    }
+
+    try{
+      const res = await fetch(SUPABASE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(!res.ok || data.error){
+        throw new Error(data.error || 'No se pudo enviar tu solicitud.');
+      }
+      showThankYou(producto);
+    } catch(err){
+      showTopError('Hubo un problema al enviar tu solicitud: ' + err.message + '. Puedes intentar de nuevo, o llamarnos directamente.');
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Enviar solicitud'; }
+      if(!isAutoFlow){ goToStep(1); }
+    }
+  }
+
+  function showThankYou(producto){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('thankyouStep').classList.add('active');
+    document.getElementById('stepsIndicator').innerHTML = '';
+    const text = isAutoFlow
+      ? 'Un agente se pondrá en contacto contigo muy pronto — ya está comenzando a trabajar en tu cotización. Te estaremos escribiendo por mensaje de texto o llamada.'
+      : `Gracias por querer cotizar con nosotros tu seguro de ${(PRODUCT_LABELS[producto] || producto).toLowerCase()}. Un agente se pondrá en contacto contigo por mensaje de texto o llamada.`;
+    document.getElementById('thankyouText').textContent = text;
+  }
+
+  // ---------- Utilidades ----------
+  function maskDate(el){
+    let v = el.value.replace(/\D/g, '').slice(0, 8);
+    if(v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+    else if(v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+    el.value = v;
+  }
+
+  function isValidDateString(str){
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
+    if(!m) return false;
+    const month = parseInt(m[1],10), day = parseInt(m[2],10), year = parseInt(m[3],10);
+    if(month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > new Date().getFullYear()) return false;
+    return true;
+  }
+
+  function toISODate(str){
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
+    if(!m) return null;
+    return `${m[3]}-${m[1]}-${m[2]}`;
+  }
+
+  renderStepsIndicator();
+</script>
+
+</body>
+</html>
