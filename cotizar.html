@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotiza tu seguro</title>
+<style>
+  :root{
+    --blue:#1E4FA0;
+    --navy:#0B2D6E;
+    --gold:#EFAF3E;
+    --gold-deep:#D69428;
+    --canvas:#F6F7FB;
+    --white:#FFFFFF;
+    --slate:#33415C;
+    --slate-light:#8B93A7;
+    --line:#E7EAF2;
+    --danger:#D14343;
+    --success:#1E9E6B;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:var(--canvas); color:var(--slate); padding-bottom:70px;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:20px 18px; text-align:center;
+  }
+  header h1{ margin:0; font-size:20px; font-weight:700; }
+  header p{ margin:6px 0 0; font-size:13.5px; color:#C7D5EE; }
+
+  .wrap{ max-width:640px; margin:0 auto; padding:18px; }
+
+  /* Indicador de pasos */
+  .steps-indicator{ display:flex; justify-content:space-between; margin-bottom:22px; gap:4px; }
+  .steps-indicator .dot-wrap{ flex:1; text-align:center; }
+  .steps-indicator .dot{
+    width:28px; height:28px; border-radius:50%; background:#fff; border:2px solid var(--line);
+    color:var(--slate-light); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 6px; transition:all .2s;
+  }
+  .steps-indicator .dot.active{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .steps-indicator .dot.done{ background:var(--success); border-color:var(--success); color:#fff; }
+  .steps-indicator .label{ font-size:10.5px; color:var(--slate-light); line-height:1.2; }
+  .steps-indicator .label.active{ color:var(--blue); font-weight:700; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:0 2px 10px rgba(11,45,110,0.05); }
+  .step{ display:none; }
+  .step.active{ display:block; animation:fadein .25s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  h2{ font-size:18px; margin:0 0 4px; color:var(--navy); }
+  .step-sub{ font-size:13.5px; color:var(--slate-light); margin:0 0 20px; }
+
+  .form-row{ margin-bottom:16px; }
+  .form-row label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--slate); }
+  .form-row-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-row-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .form-row-2, .form-row-3{ grid-template-columns:1fr; } }
+
+  input[type=text], input[type=email], input[type=tel], select, textarea{
+    width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:15px; font-family:inherit; color:var(--slate); background:#fff;
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--blue); }
+  textarea{ resize:vertical; }
+
+  .radio-group{ display:flex; flex-wrap:wrap; gap:10px; }
+  .radio-pill{
+    border:1.5px solid var(--line); border-radius:10px; padding:10px 16px; font-size:14px; font-weight:600;
+    cursor:pointer; color:var(--slate); background:#fff; user-select:none; transition:all .15s;
+  }
+  .radio-pill input{ display:none; }
+  .radio-pill.selected{ border-color:var(--blue); background:#EAF1FC; color:var(--blue); }
+
+  .error-text{ color:var(--danger); font-size:12.5px; margin-top:5px; display:none; }
+  .field-error input, .field-error select{ border-color:var(--danger); }
+  .field-error .error-text{ display:block; }
+
+  .info-btn{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; min-width:24px; border-radius:50%;
+    background:var(--line); color:var(--slate); font-size:13px; font-weight:700; border:none; cursor:pointer;
+    margin-left:6px; vertical-align:middle; padding:0;
+  }
+  .info-box{
+    display:none; background:#EAF1FC; border:1px solid #C7D9F3; border-radius:10px; padding:12px 14px;
+    font-size:13px; color:var(--navy); margin-top:8px; line-height:1.5;
+  }
+  .info-box.open{ display:block; }
+
+  .sub-card{
+    border:1.5px solid var(--line); border-radius:12px; padding:16px; margin-top:14px; background:#FAFBFD;
+  }
+  .sub-card h3{ margin:0 0 12px; font-size:14.5px; color:var(--blue); }
+
+  .nav-buttons{ display:flex; gap:12px; margin-top:24px; }
+  button.btn-primary, a.btn-primary{
+    flex:1; background:var(--gold); color:var(--navy); border:none; border-radius:10px; padding:14px;
+    font-size:15px; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; display:block;
+  }
+  button.btn-primary:hover{ background:var(--gold-deep); }
+  button.btn-secondary{
+    background:#fff; color:var(--slate); border:1.5px solid var(--line); border-radius:10px; padding:14px 18px;
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  button:disabled{ opacity:0.6; cursor:not-allowed; }
+
+  .call-bar{
+    position:fixed; bottom:0; left:0; right:0; background:var(--navy); color:#fff; padding:16px 20px;
+    display:flex; justify-content:space-between; align-items:center; gap:14px; font-size:15.5px; font-weight:600; z-index:50;
+    box-shadow:0 -4px 14px rgba(0,0,0,0.15);
+  }
+  .call-bar a{
+    background:var(--gold); color:var(--navy); font-weight:800; padding:13px 22px; border-radius:10px;
+    text-decoration:none; font-size:17px; white-space:nowrap; display:flex; align-items:center; gap:8px;
+  }
+  .call-bar a .phone-icon{ font-size:18px; }
+  @media (max-width:480px){
+    .call-bar{ flex-direction:column; gap:8px; padding:14px 16px; text-align:center; }
+    .call-bar a{ width:100%; justify-content:center; }
+  }
+
+  .thankyou{ text-align:center; padding:30px 10px; }
+  .thankyou .icon{ font-size:44px; margin-bottom:10px; }
+  .thankyou h2{ font-size:21px; }
+  .thankyou p{ font-size:14.5px; color:var(--slate); line-height:1.6; }
+
+  .top-error{ background:#FBEAEA; border:1px solid #F3C3C3; color:var(--danger); border-radius:10px; padding:12px 14px; font-size:13.5px; margin-bottom:16px; display:none; }
+
+  .vin-hint{ font-size:12px; color:var(--slate-light); margin-top:5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GMAX All Insurance — Cotiza tu seguro</h1>
+  <p>Cuéntanos un poco de ti — te contactamos con tu cotización.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="steps-indicator" id="stepsIndicator"></div>
+
+  <div class="card">
+
+    <div class="top-error" id="topError"></div>
+
+    <!-- ===== PASO 1: Información principal ===== -->
+    <section class="step active" data-step="1">
+      <h2>Tu información</h2>
+      <p class="step-sub">Empecemos con tus datos y qué seguro estás buscando.</p>
+
+      <div class="form-row-3">
+        <div class="form-row" id="fld-nombre"><label>Nombre</label><input type="text" id="p1-nombre"><div class="error-text">Escribe tu nombre.</div></div>
+        <div class="form-row"><label>Segundo nombre</label><input type="text" id="p1-nombre2"></div>
+        <div class="form-row" id="fld-apellido"><label>Apellido(s)</label><input type="text" id="p1-apellido"><div class="error-text">Escribe tu apellido.</div></div>
+      </div>
+      <div class="form-row" id="fld-direccion">
+        <label>Dirección</label>
+        <input type="text" id="p1-direccion" placeholder="Calle y número">
+        <div class="error-text">Escribe tu dirección.</div>
+      </div>
+      <div class="form-row">
+        <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(apto, suite — opcional)</span></label>
+        <input type="text" id="p1-direccion2" placeholder="Apto, suite, etc.">
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" id="fld-ciudad"><label>Ciudad</label><input type="text" id="p1-ciudad"><div class="error-text">Escribe tu ciudad.</div></div>
+        <div class="form-row" id="fld-zip"><label>Código postal</label><input type="text" id="p1-zip" maxlength="10" placeholder="77521" oninput="onZipInput(this)"><div class="error-text">Escribe un código postal válido (5 dígitos).</div></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" id="fld-telefono"><label>Teléfono</label><input type="tel" id="p1-telefono" placeholder="(555) 555-5555" maxlength="14" oninput="maskPhone(this)"><div class="error-text">El teléfono debe tener 10 dígitos.</div></div>
+        <div class="form-row" id="fld-correo"><label>Correo electrónico</label><input type="email" id="p1-correo" placeholder="tu@correo.com"><div class="error-text">Escribe un correo válido.</div></div>
+      </div>
+      <div class="form-row" id="fld-producto">
+        <label>¿Qué seguro estás necesitando?</label>
+        <select id="p1-producto">
+          <option value="">Selecciona una opción</option>
+          <option value="auto_personal">Auto personal</option>
+          <option value="auto_comercial">Auto comercial / Trucking</option>
+          <option value="motocicleta">Motocicleta</option>
+          <option value="home">Casa (Home)</option>
+          <option value="vida">Vida</option>
+          <option value="medico">Salud / Médico</option>
+          <option value="renters">Inquilinos</option>
+          <option value="errores_omisiones">Errores y Omisiones (E&amp;O)</option>
+          <option value="comercial_negocios">Seguro comercial para negocios</option>
+          <option value="otro">Otro</option>
+        </select>
+        <div class="error-text">Selecciona qué seguro necesitas.</div>
+      </div>
+      <div class="form-row">
+        <label>Comentarios (opcional)</label>
+        <textarea id="p1-comentarios" rows="3" placeholder="Cuéntanos cualquier detalle que nos ayude a cotizarte mejor"></textarea>
+      </div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-primary" id="step1ContinueBtn" onclick="onStep1Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 2: Elegibilidad (mostrado solo si es auto) ===== -->
+    <section class="step" data-step="2">
+      <h2>Un par de preguntas rápidas</h2>
+      <p class="step-sub">Esto nos ayuda a encontrarte mejores opciones. Puedes dejarlas en blanco si prefieres.</p>
+
+      <div class="form-row">
+        <label id="lbl-seguro6meses">¿Has tenido seguro de auto de forma continua en los últimos 6 meses?</label>
+        <div class="radio-group" id="rg-seguro6meses">
+          <label class="radio-pill"><input type="radio" name="seguro6meses" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="seguro6meses" value="no"> No</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>¿Eres dueño(a) de casa o alguna propiedad?</label>
+        <div class="radio-group" id="rg-dueñocasa">
+          <label class="radio-pill"><input type="radio" name="dueñocasa" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="dueñocasa" value="no"> No</label>
+        </div>
+      </div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(1)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="goToStep(3)">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 3: Conductores ===== -->
+    <section class="step" data-step="3">
+      <h2>Conductores</h2>
+      <p class="step-sub">¿Cuántas personas van a manejar los vehículos que quieres asegurar?</p>
+
+      <div class="form-row">
+        <label>Cantidad de conductores</label>
+        <select id="p3-cantidad" onchange="renderDrivers()">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+
+      <div id="driversContainer"></div>
+      <datalist id="us-states-list"></datalist>
+      <datalist id="countries-list"></datalist>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(2)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="onStep3Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 4: Vehículos ===== -->
+    <section class="step" data-step="4">
+      <h2>Vehículos</h2>
+      <p class="step-sub">Cuéntanos qué vehículos quieres asegurar.</p>
+
+      <div class="form-row">
+        <label>Cantidad de vehículos</label>
+        <select id="p4-cantidad" onchange="renderVehicles()">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+
+      <div id="vehiclesContainer"></div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(3)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="onStep4Continue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO "Detalles" — cambia según el tipo de seguro elegido ===== -->
+    <section class="step" data-step="detalles">
+      <h2>Un poco más de información</h2>
+      <p class="step-sub">Con esto ya podemos empezar a trabajar en tu cotización.</p>
+
+      <!-- RENTERS -->
+      <div id="detalles-renters" style="display:none;">
+        <div class="form-row" id="fld-r-nacimiento">
+          <label>Fecha de nacimiento</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="r-nacimiento" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+            <input type="date" id="r-nacimiento-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+            <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+          </div>
+          <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+        </div>
+        <div class="form-row" id="fld-r-direccion">
+          <label>Dirección de la propiedad que deseas alquilar</label>
+          <input type="text" id="r-direccion" placeholder="Calle y número">
+          <div class="error-text">Escribe la dirección.</div>
+        </div>
+        <div class="form-row">
+          <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(apto, suite, unidad — opcional)</span></label>
+          <input type="text" id="r-direccion2">
+        </div>
+        <div class="form-row-3">
+          <div class="form-row" id="fld-r-ciudad"><label>Ciudad</label><input type="text" id="r-ciudad"><div class="error-text">Requerido.</div></div>
+          <div class="form-row" id="fld-r-estado"><label>Estado</label><input type="text" id="r-estado" value="Texas"><div class="error-text">Requerido.</div></div>
+          <div class="form-row" id="fld-r-zip"><label>Código postal</label><input type="text" id="r-zip" maxlength="5" oninput="onZipInput(this)"><div class="error-text">5 dígitos.</div></div>
+        </div>
+        <div class="form-row" id="fld-r-personas">
+          <label>¿Cuántas personas conforman el núcleo familiar?</label>
+          <input type="number" min="1" id="r-personas">
+          <div class="error-text">Escribe un número.</div>
+        </div>
+        <div class="form-row">
+          <label>¿Tienes mascotas?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="r-mascotas" value="si" onchange="toggleField('fld-r-mascotas-detalle', true)"> Sí</label>
+            <label class="radio-pill"><input type="radio" name="r-mascotas" value="no" onchange="toggleField('fld-r-mascotas-detalle', false)"> No</label>
+          </div>
+        </div>
+        <div class="form-row-2" id="fld-r-mascotas-detalle" style="display:none;">
+          <div class="form-row"><label>¿Cuántas?</label><input type="number" min="1" id="r-mascotas-cantidad"></div>
+          <div class="form-row"><label>¿Qué tipo? (perro, gato, etc.)</label><input type="text" id="r-mascotas-tipo"></div>
+        </div>
+        <div class="form-row">
+          <label>¿Necesitas alguna cobertura en específico? <span style="font-weight:400; color:var(--slate-light);">(opcional)</span></label>
+          <textarea id="r-comentario" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- CASA (HOME) -->
+      <div id="detalles-home" style="display:none;">
+        <h3 style="font-size:17px; color:var(--navy); margin-bottom:12px;">Información del propietario</h3>
+        <div class="form-row-3">
+          <div class="form-row" id="fld-h-nombre"><label>Nombre</label><input type="text" id="h-nombre"><div class="error-text">Requerido.</div></div>
+          <div class="form-row"><label>Segundo nombre</label><input type="text" id="h-nombre2"></div>
+          <div class="form-row" id="fld-h-apellido"><label>Apellido(s)</label><input type="text" id="h-apellido"><div class="error-text">Requerido.</div></div>
+        </div>
+        <div class="form-row" id="fld-h-nacimiento">
+          <label>Fecha de nacimiento</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="h-nacimiento" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+            <input type="date" id="h-nacimiento-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+            <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+          </div>
+          <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+        </div>
+
+        <h3 style="font-size:17px; color:var(--navy); margin:22px 0 12px;">La propiedad</h3>
+        <div class="form-row" id="fld-h-direccion">
+          <label>Dirección de la propiedad que deseas asegurar</label>
+          <input type="text" id="h-direccion" placeholder="Calle y número">
+          <div class="error-text">Escribe la dirección.</div>
+        </div>
+        <div class="form-row">
+          <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(apto, suite — opcional)</span></label>
+          <input type="text" id="h-direccion2">
+        </div>
+        <div class="form-row-3">
+          <div class="form-row" id="fld-h-ciudad"><label>Ciudad</label><input type="text" id="h-ciudad"><div class="error-text">Requerido.</div></div>
+          <div class="form-row" id="fld-h-estado"><label>Estado</label><input type="text" id="h-estado" value="Texas"><div class="error-text">Requerido.</div></div>
+          <div class="form-row" id="fld-h-zip"><label>Código postal</label><input type="text" id="h-zip" maxlength="5" oninput="onZipInput(this)"><div class="error-text">5 dígitos.</div></div>
+        </div>
+        <div class="form-row" id="fld-h-fechacompra">
+          <label>¿Cuándo compró la propiedad?</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="h-fechacompra" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+            <input type="date" id="h-fechacompra-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+            <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+          </div>
+          <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+        </div>
+        <div class="form-row">
+          <label>¿Se ha remodelado el baño o la cocina?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-remodelo" value="no"> No</label>
+            <label class="radio-pill"><input type="radio" name="h-remodelo" value="parcial"> Remodelación parcial</label>
+            <label class="radio-pill"><input type="radio" name="h-remodelo" value="completa"> Remodelación completa</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>¿La propiedad tiene piscina?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-piscina" value="si" onchange="toggleField('fld-h-piscina-tipo', true)"> Sí</label>
+            <label class="radio-pill"><input type="radio" name="h-piscina" value="no" onchange="toggleField('fld-h-piscina-tipo', false)"> No</label>
+          </div>
+        </div>
+        <div class="form-row" id="fld-h-piscina-tipo" style="display:none;">
+          <label>Especifica el tipo de piscina</label>
+          <input type="text" id="h-piscina-tipo" placeholder="Ej. enterrada, sobre el nivel del suelo, etc.">
+        </div>
+        <div class="form-row">
+          <label>¿La propiedad tiene paneles solares?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-paneles" value="si"> Sí</label>
+            <label class="radio-pill"><input type="radio" name="h-paneles" value="no"> No</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>¿Tienes mascotas?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-mascotas" value="si" onchange="toggleField('fld-h-mascotas-detalle', true)"> Sí</label>
+            <label class="radio-pill"><input type="radio" name="h-mascotas" value="no" onchange="toggleField('fld-h-mascotas-detalle', false)"> No</label>
+          </div>
+        </div>
+        <div class="form-row-2" id="fld-h-mascotas-detalle" style="display:none;">
+          <div class="form-row"><label>¿Cuántas?</label><input type="number" min="1" id="h-mascotas-cantidad"></div>
+          <div class="form-row"><label>¿Qué tipo? (perro, gato, etc.)</label><input type="text" id="h-mascotas-tipo"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row" id="fld-h-bomberos"><label>¿A cuántas millas está la estación de bomberos más cercana?</label><input type="number" min="0" step="0.1" id="h-bomberos"><div class="error-text">Escribe un número.</div></div>
+          <div class="form-row" id="fld-h-hidrante">
+            <label>¿A cuántos pies queda el hidrante más cercano?
+              <button type="button" class="info-btn" onclick="toggleInfo('info-hidrante')">?</button>
+            </label>
+            <div class="info-box" id="info-hidrante">Un hidrante es donde los bomberos conectan la manguera en caso de que tengan que extinguir un incendio.</div>
+            <input type="number" min="0" id="h-hidrante" style="margin-top:8px;">
+            <div class="error-text">Escribe un número.</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>¿La propiedad está hipotecada o pagada por completo?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-hipoteca" value="hipotecada"> Hipotecada</label>
+            <label class="radio-pill"><input type="radio" name="h-hipoteca" value="pagada"> Pagada por completo</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>¿Ha hecho algún reclamo a una póliza de propiedad en los últimos 5 años?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="h-reclamos" value="si" onchange="toggleField('fld-h-reclamo-detalle', true)"> Sí</label>
+            <label class="radio-pill"><input type="radio" name="h-reclamos" value="no" onchange="toggleField('fld-h-reclamo-detalle', false)"> No</label>
+          </div>
+        </div>
+        <div class="form-row" id="fld-h-reclamo-detalle" style="display:none;">
+          <label>Explica el motivo y qué fue el reclamo</label>
+          <textarea id="h-reclamo-detalle-txt" rows="3"></textarea>
+        </div>
+        <div class="form-row" id="fld-h-deducible">
+          <label>¿Cuánto deducible te gustaría?
+            <button type="button" class="info-btn" onclick="toggleInfo('info-deducible-home')">?</button>
+          </label>
+          <div class="info-box" id="info-deducible-home">El deducible es la cantidad que tú pagas de tu bolsillo antes de que la aseguradora cubra el resto del daño. En pólizas de casa suele ser un porcentaje del valor asegurado ("deducible por ocurrencia") — por ejemplo, 1% de una casa asegurada en $300,000 seria un deducible de $3,000.</div>
+          <select id="h-deducible" style="margin-top:8px;">
+            <option value="">Selecciona</option>
+            <option value="1">1%</option>
+            <option value="1.5">1.5%</option>
+            <option value="2">2%</option>
+            <option value="2.5">2.5%</option>
+            <option value="3">3%</option>
+            <option value="4">4%</option>
+            <option value="5">5%</option>
+          </select>
+          <div class="error-text">Selecciona un deducible.</div>
+        </div>
+      </div>
+
+      <!-- ERRORES Y OMISIONES -->
+      <div id="detalles-eo" style="display:none;">
+        <div class="form-row">
+          <label>¿Cómo la necesitas?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="eo-tipo" value="agente" onchange="onEoTipoChange()"> Como agente independiente</label>
+            <label class="radio-pill"><input type="radio" name="eo-tipo" value="agencia" onchange="onEoTipoChange()"> Como agencia</label>
+          </div>
+        </div>
+
+        <div id="eo-agente-block" style="display:none;">
+          <div class="form-row" id="fld-eo-licencia">
+            <label>Tipo de licencia <span style="font-weight:400; color:var(--slate-light);">(marca todas las que apliquen)</span></label>
+            <div class="radio-group">
+              <label class="radio-pill"><input type="checkbox" name="eo-licencia" value="vida"> Vida</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-licencia" value="vida_salud"> Vida y Salud</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-licencia" value="personal_lines"> Personal Lines</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-licencia" value="property_casualty"> Property &amp; Casualty</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-licencia" value="otro" onchange="toggleField('fld-eo-licencia-otro', this.checked)"> Otro</label>
+            </div>
+            <div class="error-text">Marca al menos una licencia.</div>
+          </div>
+          <div class="form-row" id="fld-eo-licencia-otro" style="display:none;">
+            <label>Especifica cuál otra licencia</label>
+            <input type="text" id="eo-licencia-otro-txt">
+          </div>
+          <div class="form-row-2">
+            <div class="form-row" id="fld-eo-experiencia"><label>Años de experiencia</label><input type="number" min="0" id="eo-experiencia"><div class="error-text">Escribe un número.</div></div>
+            <div class="form-row" id="fld-eo-ingresos"><label>Ingresos proyectados próximos 12 meses ($)</label><input type="number" min="0" step="0.01" id="eo-ingresos"><div class="error-text">Escribe un monto.</div></div>
+          </div>
+        </div>
+
+        <div id="eo-agencia-block" style="display:none;">
+          <div class="form-row" id="fld-eo-entidad">
+            <label>Tipo de entidad</label>
+            <select id="eo-entidad" onchange="toggleField('fld-eo-entidad-otro', this.value === 'otro')">
+              <option value="">Selecciona</option>
+              <option value="llc">LLC</option>
+              <option value="propietario_unico">Propietario único (Sole Proprietorship)</option>
+              <option value="corporacion">Corporación</option>
+              <option value="s_corp">S-Corporation</option>
+              <option value="sociedad">Sociedad (Partnership)</option>
+              <option value="fideicomiso">Fideicomiso (Trust)</option>
+              <option value="otro">Otro</option>
+            </select>
+            <div class="error-text">Selecciona el tipo de entidad.</div>
+          </div>
+          <div class="form-row" id="fld-eo-entidad-otro" style="display:none;">
+            <label>Especifica el tipo de entidad</label>
+            <input type="text" id="eo-entidad-otro-txt">
+          </div>
+          <div class="form-row" id="fld-eo-anocreacion"><label>Año en que se creó la compañía</label><input type="number" min="1900" max="2100" id="eo-anocreacion"><div class="error-text">Escribe un año válido.</div></div>
+
+          <h3 style="font-size:16px; color:var(--navy); margin:16px 0 10px;">Dirección de la compañía</h3>
+          <div class="form-row" id="fld-eo-cia-direccion">
+            <label>Dirección</label>
+            <input type="text" id="eo-cia-direccion" placeholder="Calle y número">
+            <div class="error-text">Escribe la dirección.</div>
+          </div>
+          <div class="form-row">
+            <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(suite, oficina — opcional)</span></label>
+            <input type="text" id="eo-cia-direccion2">
+          </div>
+          <div class="form-row-3">
+            <div class="form-row" id="fld-eo-cia-ciudad"><label>Ciudad</label><input type="text" id="eo-cia-ciudad"><div class="error-text">Requerido.</div></div>
+            <div class="form-row" id="fld-eo-cia-estado"><label>Estado</label><input type="text" id="eo-cia-estado" value="Texas"><div class="error-text">Requerido.</div></div>
+            <div class="form-row" id="fld-eo-cia-zip"><label>Código postal</label><input type="text" id="eo-cia-zip" maxlength="5" oninput="onZipInput(this)"><div class="error-text">5 dígitos.</div></div>
+          </div>
+
+          <div class="form-row">
+            <label>¿La dirección de correspondencia (mailing) es la misma?</label>
+            <div class="radio-group">
+              <label class="radio-pill"><input type="radio" name="eo-mail-same" value="si" onchange="onEoMailSameChange()"> Sí, es la misma</label>
+              <label class="radio-pill"><input type="radio" name="eo-mail-same" value="no" onchange="onEoMailSameChange()"> No, es distinta</label>
+            </div>
+          </div>
+          <div id="eo-mail-block" style="display:none;">
+            <div class="form-row" id="fld-eo-mail-direccion">
+              <label>Dirección de correspondencia</label>
+              <input type="text" id="eo-mail-direccion" placeholder="Calle y número">
+              <div class="error-text">Escribe la dirección.</div>
+            </div>
+            <div class="form-row">
+              <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(opcional)</span></label>
+              <input type="text" id="eo-mail-direccion2">
+            </div>
+            <div class="form-row-3">
+              <div class="form-row" id="fld-eo-mail-ciudad"><label>Ciudad</label><input type="text" id="eo-mail-ciudad"><div class="error-text">Requerido.</div></div>
+              <div class="form-row" id="fld-eo-mail-estado"><label>Estado</label><input type="text" id="eo-mail-estado" value="Texas"><div class="error-text">Requerido.</div></div>
+              <div class="form-row" id="fld-eo-mail-zip"><label>Código postal</label><input type="text" id="eo-mail-zip" maxlength="5" oninput="onZipInput(this)"><div class="error-text">5 dígitos.</div></div>
+            </div>
+          </div>
+          <div class="form-row" id="fld-eo-lineas">
+            <label>¿Qué líneas de seguro trabaja la compañía? <span style="font-weight:400; color:var(--slate-light);">(marca todas las que apliquen)</span></label>
+            <div class="radio-group">
+              <label class="radio-pill"><input type="checkbox" name="eo-lineas" value="vida"> Vida</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-lineas" value="vida_salud"> Vida y Salud</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-lineas" value="personal_lines"> Personal Lines</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-lineas" value="property_casualty"> Property &amp; Casualty</label>
+              <label class="radio-pill"><input type="checkbox" name="eo-lineas" value="otro" onchange="toggleField('fld-eo-lineas-otro', this.checked)"> Otro</label>
+            </div>
+            <div class="error-text">Marca al menos una línea de seguro.</div>
+          </div>
+          <div class="form-row" id="fld-eo-lineas-otro" style="display:none;">
+            <label>Especifica cuál otra línea de seguro</label>
+            <input type="text" id="eo-lineas-otro-txt">
+          </div>
+          <div class="form-row" id="fld-eo-proyeccion"><label>Proyección de ganancias próximos 12 meses ($)</label><input type="number" min="0" step="0.01" id="eo-proyeccion"><div class="error-text">Escribe un monto.</div></div>
+          <div class="form-row-2">
+            <div class="form-row" id="fld-eo-empleados"><label>¿Cuántos empleados tiene? <span style="font-weight:400; color:var(--slate-light);">(puede ser 0)</span></label><input type="number" min="0" id="eo-empleados"><div class="error-text">Escribe un número (0 o más).</div></div>
+            <div class="form-row" id="fld-eo-payroll"><label>¿Cuánto paga en payroll a los empleados? ($) <span style="font-weight:400; color:var(--slate-light);">(puede ser 0)</span></label><input type="number" min="0" step="0.01" id="eo-payroll"><div class="error-text">Escribe un monto (0 o más).</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEGURO MÉDICO -->
+      <div id="detalles-medico" style="display:none;">
+        <div class="form-row-3">
+          <div class="form-row" id="fld-m-nombre"><label>Nombre</label><input type="text" id="m-nombre"><div class="error-text">Requerido.</div></div>
+          <div class="form-row"><label>Segundo nombre</label><input type="text" id="m-nombre2"></div>
+          <div class="form-row" id="fld-m-apellido"><label>Apellido(s)</label><input type="text" id="m-apellido"><div class="error-text">Requerido.</div></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row" id="fld-m-nacimiento">
+            <label>Fecha de nacimiento</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="m-nacimiento" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+              <input type="date" id="m-nacimiento-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+              <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+            </div>
+            <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+          </div>
+          <div class="form-row" id="fld-m-civil">
+            <label>Estado civil</label>
+            <select id="m-civil">
+              <option value="">Selecciona</option>
+              <option value="soltero">Soltero(a)</option>
+              <option value="casado">Casado(a)</option>
+              <option value="divorciado">Divorciado(a)</option>
+              <option value="viudo">Viudo(a)</option>
+            </select>
+            <div class="error-text">Selecciona una opción.</div>
+          </div>
+        </div>
+        <div class="form-row" id="fld-m-idfiscal">
+          <label>Tipo de identificación fiscal</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="m-idfiscal" value="ssn"> Social Security Number (SSN)</label>
+            <label class="radio-pill"><input type="radio" name="m-idfiscal" value="itin"> ITIN</label>
+          </div>
+          <div class="error-text">Selecciona una opción.</div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row" id="fld-m-ingresos">
+            <label>Ingresos aproximados mensuales del hogar ($)
+              <button type="button" class="info-btn" onclick="toggleInfo('info-m-ingresos')">?</button>
+            </label>
+            <div class="info-box" id="info-m-ingresos">Si eres casado(a) y declaran los impuestos juntos, suma lo que ganan mensualmente entre los dos. Si eres soltero(a), o casado(a) pero declaran los impuestos por separado, escribe solamente lo que tú ganas.</div>
+            <input type="number" min="0" step="0.01" id="m-ingresos" style="margin-top:8px;">
+            <div class="error-text">Escribe un monto.</div>
+          </div>
+          <div class="form-row" id="fld-m-miembros">
+            <label>¿Cuántos miembros conforman el núcleo familiar?
+              <button type="button" class="info-btn" onclick="toggleInfo('info-m-miembros')">?</button>
+            </label>
+            <div class="info-box" id="info-m-miembros">Cuenta a tu cónyuge (si aplica) y a tus hijos dependientes que vivan contigo. Si eres tú solo(a), pon 1.</div>
+            <input type="number" min="1" id="m-miembros" style="margin-top:8px;">
+            <div class="error-text">Escribe un número.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIDA -->
+      <div id="detalles-vida" style="display:none;">
+        <div class="form-row-3">
+          <div class="form-row" id="fld-v-nombre"><label>Nombre</label><input type="text" id="v-nombre"><div class="error-text">Requerido.</div></div>
+          <div class="form-row"><label>Segundo nombre</label><input type="text" id="v-nombre2"></div>
+          <div class="form-row" id="fld-v-apellido"><label>Apellido(s)</label><input type="text" id="v-apellido"><div class="error-text">Requerido.</div></div>
+        </div>
+        <div class="form-row" id="fld-v-nacimiento">
+          <label>Fecha de nacimiento</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="v-nacimiento" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+            <input type="date" id="v-nacimiento-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+            <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+          </div>
+          <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+        </div>
+        <div class="form-row" id="fld-v-ssnitin">
+          <label>¿Tienes Número de Seguro Social o ITIN?</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="v-ssnitin" value="ssn"> Seguro Social (SSN)</label>
+            <label class="radio-pill"><input type="radio" name="v-ssnitin" value="itin"> ITIN</label>
+            <label class="radio-pill"><input type="radio" name="v-ssnitin" value="ninguno"> Ninguno</label>
+          </div>
+          <div class="error-text">Selecciona una opción.</div>
+        </div>
+        <div class="form-row" id="fld-v-estatus">
+          <label>Estatus legal en Estados Unidos</label>
+          <div class="radio-group">
+            <label class="radio-pill"><input type="radio" name="v-estatus" value="pasaporte"> Pasaporte</label>
+            <label class="radio-pill"><input type="radio" name="v-estatus" value="permiso_trabajo"> Permiso de trabajo</label>
+            <label class="radio-pill"><input type="radio" name="v-estatus" value="residencia"> Residencia</label>
+            <label class="radio-pill"><input type="radio" name="v-estatus" value="ciudadano"> Ciudadano americano</label>
+          </div>
+          <div class="error-text">Selecciona una opción.</div>
+        </div>
+        <div class="form-row" id="fld-v-monto">
+          <label>¿Por qué cantidad te gustaría asegurarte?
+            <button type="button" class="info-btn" onclick="toggleInfo('info-monto-vida')">?</button>
+          </label>
+          <div class="info-box" id="info-monto-vida">Lo recomendado es asegurar 10 veces tus ingresos anuales. Por ejemplo, si ganas $30,000 al año, lo recomendado sería asegurarte por $300,000.</div>
+          <input type="number" min="0" step="1000" id="v-monto" placeholder="Ej. 300000" style="margin-top:8px;">
+          <div class="error-text">Escribe un monto.</div>
+        </div>
+        <div class="form-row" id="fld-v-tipo">
+          <label>¿Qué tipo de seguro de vida te interesa?</label>
+          <div class="radio-group" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:8px;">
+            <div>
+              <label class="radio-pill"><input type="radio" name="v-tipo" value="termino" onchange="onVidaTipoChange()"> Seguro a término
+                <button type="button" class="info-btn" onclick="event.preventDefault(); toggleInfo('info-termino');">?</button>
+              </label>
+              <div class="info-box" id="info-termino">Un seguro a término cubre por un tiempo fijo (10, 20 o 30 años) con una prima mensual accesible. Incluye un beneficio por fallecimiento que deja protegida económicamente a tu familia y seres queridos. También tiene beneficios en vida: si te diagnostican una enfermedad crítica o crónica, o no puedes realizar al menos 2 de las 6 actividades básicas de la vida diaria, puedes recibir parte del dinero en vida. No acumula ahorro ni devuelve primas — es sencillo: mes pagado, mes cubierto.</div>
+            </div>
+            <div>
+              <label class="radio-pill"><input type="radio" name="v-tipo" value="iul" onchange="onVidaTipoChange()"> IUL (Index Universal Life)
+                <button type="button" class="info-btn" onclick="event.preventDefault(); toggleInfo('info-iul');">?</button>
+              </label>
+              <div class="info-box" id="info-iul">El IUL es un seguro de vida permanente. Incluye un beneficio por fallecimiento que deja protegida económicamente a tu familia y seres queridos, según la cobertura que elijas. También incluye beneficios en vida ante enfermedades críticas, crónicas o terminales, igual que el seguro a término.</div>
+            </div>
+          </div>
+          <div class="error-text">Selecciona un tipo de seguro.</div>
+        </div>
+        <div class="form-row" id="fld-v-terminoanios" style="display:none;">
+          <label>¿Por cuántos años?</label>
+          <select id="v-terminoanios">
+            <option value="">Selecciona</option>
+            <option value="10">10 años</option>
+            <option value="20">20 años</option>
+            <option value="30">30 años</option>
+          </select>
+          <div class="error-text">Selecciona el número de años.</div>
+        </div>
+        <div class="form-row" id="fld-v-presupuesto">
+          <label>¿Cuál es tu presupuesto mensual para el seguro de vida? ($)</label>
+          <input type="number" min="0" step="0.01" id="v-presupuesto">
+          <div class="error-text">Escribe un monto.</div>
+        </div>
+      </div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(1)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="onDetallesContinue()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ===== PASO 5: Enviar ===== -->
+    <section class="step" data-step="5">
+      <h2>¡Ya casi terminamos!</h2>
+      <p class="step-sub">Revisa que todo esté correcto y envía tu solicitud. Un agente comenzará a trabajar en tu cotización.</p>
+
+      <div id="summaryBox" style="font-size:13.5px; line-height:1.7; background:var(--canvas); border-radius:10px; padding:14px 16px;"></div>
+
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" id="step5BackBtn" onclick="goBackFromStep5()">Atrás</button>
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitQuote()">Enviar solicitud</button>
+      </div>
+    </section>
+
+    <!-- ===== Pantalla de agradecimiento ===== -->
+    <section class="step" id="thankyouStep">
+      <div class="thankyou">
+        <div class="icon">✅</div>
+        <h2>¡Gracias por confiar en nosotros!</h2>
+        <p id="thankyouText"></p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="call-bar">
+  <span>¿Prefieres hablar con un agente ahora?</span>
+  <a href="tel:+18324800217"><span class="phone-icon">📞</span> (832) 480-0217</a>
+</div>
+
+<script>
+  document.querySelector('.call-bar a').href = 'tel:+18324800217';
+
+  const SUPABASE_FUNCTION_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co/functions/v1/submit-public-quote';
+  const SUPABASE_ANON_KEY = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+
+  const AUTO_PRODUCTS = ['auto_personal', 'auto_comercial', 'motocicleta'];
+  const RENTERS_PRODUCTS = ['renters'];
+  const HOME_PRODUCTS = ['home'];
+  const EO_PRODUCTS = ['errores_omisiones'];
+  const MEDICO_PRODUCTS = ['medico'];
+  const VIDA_PRODUCTS = ['vida'];
+  const PRODUCT_LABELS = {
+    auto_personal: 'Auto personal', auto_comercial: 'Auto comercial / Trucking', motocicleta: 'Motocicleta',
+    home: 'Casa (Home)', vida: 'Vida', medico: 'Salud / Médico', renters: 'Inquilinos',
+    errores_omisiones: 'Errores y Omisiones (E&O)', comercial_negocios: 'Seguro comercial para negocios', otro: 'Otro'
+  };
+  const COVERAGE_LABELS = { liability: 'Liability', full: 'Full Coverage', otra: 'Otra' };
+  const ID_TYPE_LABELS = { licencia: 'Licencia de conducir', matricula: 'Matrícula', pasaporte: 'Pasaporte' };
+  const CIVIL_LABELS = { soltero: 'Soltero(a)', casado: 'Casado(a)', divorciado: 'Divorciado(a)', viudo: 'Viudo(a)' };
+  const EO_LINEA_LABELS = { vida: 'Vida', vida_salud: 'Vida y Salud', personal_lines: 'Personal Lines', property_casualty: 'Property & Casualty', otro: 'Otro' };
+  const EO_ENTIDAD_LABELS = { llc: 'LLC', propietario_unico: 'Propietario único', corporacion: 'Corporación', s_corp: 'S-Corporation', sociedad: 'Sociedad (Partnership)', fideicomiso: 'Fideicomiso', otro: 'Otro' };
+
+  let currentStep = 1;
+  let isAutoFlow = false;   // se mantiene por compatibilidad — equivale a flowType === 'auto'
+  let flowType = 'simple';  // 'auto' | 'renters' | 'home' | 'eo' | 'medico' | 'simple'
+
+  function getFlowType(producto){
+    if(AUTO_PRODUCTS.includes(producto)) return 'auto';
+    if(RENTERS_PRODUCTS.includes(producto)) return 'renters';
+    if(HOME_PRODUCTS.includes(producto)) return 'home';
+    if(EO_PRODUCTS.includes(producto)) return 'eo';
+    if(MEDICO_PRODUCTS.includes(producto)) return 'medico';
+    if(VIDA_PRODUCTS.includes(producto)) return 'vida';
+    return 'simple';
+  }
+
+  // Los "planes" de pasos posibles, según qué tipo de seguro se eligió en el Paso 1.
+  const STEP_PLANS = {
+    auto:     [{id:'1', label:'Tu información'}, {id:'2', label:'Preguntas'}, {id:'3', label:'Conductores'}, {id:'4', label:'Vehículos'}, {id:'5', label:'Enviar'}],
+    detalles: [{id:'1', label:'Tu información'}, {id:'detalles', label:'Detalles'}, {id:'5', label:'Enviar'}],
+    simple:   [{id:'1', label:'Tu información'}, {id:'5', label:'Enviar'}]
+  };
+
+  function getStepPlan(){
+    if(flowType === 'auto') return STEP_PLANS.auto;
+    if(flowType === 'simple') return STEP_PLANS.simple;
+    return STEP_PLANS.detalles; // renters, home, eo, medico
+  }
+
+  // Pinta cualquier "radio-pill" de la página al seleccionarlo — funciona tanto para
+  // los que ya existen en el HTML (Paso 2) como para los que se generan dinámicamente
+  // (conductores, vehículos), gracias a que el evento se escucha en todo el documento.
+  // Los radio son de una sola opción (se despinta el resto del grupo); los checkbox
+  // son de varias opciones a la vez (cada uno se pinta/despinta de forma independiente).
+  document.addEventListener('change', function(e){
+    if(e.target.matches('.radio-pill input[type=radio]')){
+      const group = e.target.closest('.radio-group');
+      if(group){
+        group.querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+      }
+      e.target.closest('.radio-pill').classList.add('selected');
+    } else if(e.target.matches('.radio-pill input[type=checkbox]')){
+      e.target.closest('.radio-pill').classList.toggle('selected', e.target.checked);
+    }
+  });
+
+  function toggleField(id, show){
+    const el = document.getElementById(id);
+    if(el) el.style.display = show ? 'block' : 'none';
+  }
+
+  // ---------- Indicador de pasos ----------
+  function renderStepsIndicator(){
+    const wrap = document.getElementById('stepsIndicator');
+    if(flowType === 'simple'){ wrap.innerHTML = ''; return; }
+    const plan = getStepPlan();
+    const currentIndex = plan.findIndex(s => s.id === String(currentStep));
+    wrap.innerHTML = plan.map((step, i) => {
+      let cls = 'dot';
+      if(i < currentIndex) cls += ' done';
+      if(i === currentIndex) cls += ' active';
+      return `<div class="dot-wrap"><div class="${cls}">${i < currentIndex ? '✓' : i + 1}</div><div class="label${i === currentIndex ? ' active' : ''}">${step.label}</div></div>`;
+    }).join('');
+  }
+
+  function goToStep(n){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const target = document.querySelector(`.step[data-step="${n}"]`);
+    if(target) target.classList.add('active');
+    currentStep = n;
+    renderStepsIndicator();
+    document.getElementById('topError').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if(n === 3) renderDrivers();
+    if(n === 4) renderVehicles();
+    if(n === 'detalles') showDetallesForFlow();
+    if(n === 5) renderSummary();
+  }
+
+  function showDetallesForFlow(){
+    ['renters','home','eo','medico','vida'].forEach(f => {
+      document.getElementById('detalles-' + f).style.display = (flowType === f) ? 'block' : 'none';
+    });
+  }
+
+  function showTopError(msg){
+    const box = document.getElementById('topError');
+    box.textContent = msg;
+    box.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function markFieldError(fieldId, hasError){
+    const el = document.getElementById(fieldId);
+    if(!el) return;
+    el.classList.toggle('field-error', hasError);
+  }
+
+  // ---------- Paso 1 ----------
+  let createdClientId = null;
+  let createdQuoteId = null;
+
+  function buildFullAddress(){
+    const calle = document.getElementById('p1-direccion').value.trim();
+    const calle2 = document.getElementById('p1-direccion2').value.trim();
+    const ciudad = document.getElementById('p1-ciudad').value.trim();
+    const zip = document.getElementById('p1-zip').value.trim();
+    const partes = [calle, calle2].filter(Boolean).join(', ');
+    return `${partes}, ${ciudad}, TX ${zip}`.trim();
+  }
+
+  function buildPrincipalPayload(){
+    return {
+      nombre: document.getElementById('p1-nombre').value.trim(),
+      nombre2: document.getElementById('p1-nombre2').value.trim(),
+      apellido: document.getElementById('p1-apellido').value.trim(),
+      direccion: buildFullAddress(),
+      telefono: document.getElementById('p1-telefono').value.trim(),
+      correo: document.getElementById('p1-correo').value.trim(),
+      producto: document.getElementById('p1-producto').value,
+      comentarios: document.getElementById('p1-comentarios').value.trim()
+    };
+  }
+
+  async function onStep1Continue(){
+    const nombre = document.getElementById('p1-nombre').value.trim();
+    const apellido = document.getElementById('p1-apellido').value.trim();
+    const direccion = document.getElementById('p1-direccion').value.trim();
+    const ciudad = document.getElementById('p1-ciudad').value.trim();
+    const zip = document.getElementById('p1-zip').value.trim();
+    const telefono = document.getElementById('p1-telefono').value.trim();
+    const telefonoDigitos = telefono.replace(/\D/g, '');
+    const correo = document.getElementById('p1-correo').value.trim();
+    const producto = document.getElementById('p1-producto').value;
+
+    let ok = true;
+    markFieldError('fld-nombre', !nombre); if(!nombre) ok = false;
+    markFieldError('fld-apellido', !apellido); if(!apellido) ok = false;
+    markFieldError('fld-direccion', !direccion); if(!direccion) ok = false;
+    markFieldError('fld-ciudad', !ciudad); if(!ciudad) ok = false;
+    const zipValido = /^\d{5}$/.test(zip);
+    markFieldError('fld-zip', !zipValido); if(!zipValido) ok = false;
+    markFieldError('fld-telefono', telefonoDigitos.length !== 10); if(telefonoDigitos.length !== 10) ok = false;
+    const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+    markFieldError('fld-correo', !correoValido); if(!correoValido) ok = false;
+    markFieldError('fld-producto', !producto); if(!producto) ok = false;
+
+    if(!ok){ showTopError('Completa los campos marcados en rojo antes de continuar.'); return; }
+
+    flowType = getFlowType(producto);
+    isAutoFlow = flowType === 'auto';
+
+    if(flowType === 'simple'){
+      // No es un seguro con flujo especial: no hace falta el resto del wizard — se envía directo.
+      submitQuote();
+      return;
+    }
+
+    // Guarda el lead de una vez con la info de contacto — así, aunque la persona
+    // no termine el resto del formulario, ya queda registrada en el CRM.
+    const continueBtn = document.getElementById('step1ContinueBtn');
+    if(continueBtn){ continueBtn.disabled = true; continueBtn.textContent = 'Guardando...'; }
+    try{
+      const res = await fetch(SUPABASE_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({ principal: buildPrincipalPayload(), partial: true })
+      });
+      const data = await res.json();
+      if(res.ok && !data.error){
+        createdClientId = data.client_id;
+        createdQuoteId = data.quote_id;
+      }
+    } catch(err){
+      // Si falla aquí, no pasa nada grave: el envío final (Paso 5) va a crear
+      // el cliente desde cero como respaldo. No bloqueamos al usuario por esto.
+      console.error('No se pudo guardar el lead parcial:', err);
+    }
+    if(continueBtn){ continueBtn.disabled = false; continueBtn.textContent = 'Continuar'; }
+
+    goToStep(flowType === 'auto' ? 2 : 'detalles');
+    if(flowType === 'auto'){
+      document.getElementById('lbl-seguro6meses').textContent = producto === 'motocicleta'
+        ? '¿Has tenido seguro de motocicleta de forma continua en los últimos 6 meses?'
+        : '¿Has tenido seguro de auto de forma continua en los últimos 6 meses?';
+    }
+  }
+
+  // ---------- Paso 3: Conductores ----------
+  const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawái","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Luisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Misisipi","Misuri","Montana","Nebraska","Nevada","New Hampshire","Nueva Jersey","Nuevo México","Nueva York","Carolina del Norte","Dakota del Norte","Ohio","Oklahoma","Oregón","Pensilvania","Rhode Island","Carolina del Sur","Dakota del Sur","Tennessee","Texas","Utah","Vermont","Virginia","Washington","Virginia Occidental","Wisconsin","Wyoming","Distrito de Columbia"];
+
+  const COUNTRIES = ["Estados Unidos","México","Guatemala","Belice","El Salvador","Honduras","Nicaragua","Costa Rica","Panamá","Cuba","República Dominicana","Puerto Rico","Colombia","Venezuela","Ecuador","Perú","Bolivia","Chile","Argentina","Uruguay","Paraguay","Brasil","España","Canadá","Haití","Jamaica","China","India","Filipinas","Vietnam","Corea del Sur","Japón","Francia","Alemania","Italia","Reino Unido","Portugal","Rusia","Ucrania","Polonia","Nigeria","Etiopía","Egipto","Sudáfrica","Otro"];
+
+  function populateDatalists(){
+    document.getElementById('us-states-list').innerHTML = US_STATES.map(s => `<option value="${s}">`).join('');
+    document.getElementById('countries-list').innerHTML = COUNTRIES.map(c => `<option value="${c}">`).join('');
+  }
+
+  function onIdTypeChange(i){
+    const idtype = document.querySelector(`input[name="idtype-${i}"]:checked`)?.value;
+    document.getElementById(`fld-drv-estado-${i}`).style.display = idtype === 'licencia' ? 'block' : 'none';
+    document.getElementById(`fld-drv-pais-${i}`).style.display = (idtype === 'matricula' || idtype === 'pasaporte') ? 'block' : 'none';
+  }
+
+  function renderDrivers(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    const container = document.getElementById('driversContainer');
+    let html = '';
+    for(let i = 1; i <= qty; i++){
+      html += `
+        <div class="sub-card">
+          <h3>Conductor ${i}</h3>
+          <div class="form-row-3">
+            <div class="form-row" id="fld-drv-nombre-${i}"><label>Nombre</label><input type="text" class="drv-nombre" data-idx="${i}"><div class="error-text">Requerido.</div></div>
+            <div class="form-row"><label>Segundo nombre</label><input type="text" class="drv-nombre2" data-idx="${i}"></div>
+            <div class="form-row" id="fld-drv-apellido-${i}"><label>Apellido(s)</label><input type="text" class="drv-apellido" data-idx="${i}"><div class="error-text">Requerido.</div></div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-row" id="fld-drv-nacimiento-${i}">
+              <label>Fecha de nacimiento</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" class="drv-nacimiento" data-idx="${i}" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" style="flex:1;">
+                <input type="date" class="drv-nacimiento-picker" data-idx="${i}" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+                <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+              </div>
+              <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+            </div>
+            <div class="form-row" id="fld-drv-estadocivil-${i}">
+              <label>Estado civil</label>
+              <select class="drv-estadocivil" data-idx="${i}">
+                <option value="">Selecciona</option>
+                <option value="soltero">Soltero(a)</option>
+                <option value="casado">Casado(a)</option>
+                <option value="divorciado">Divorciado(a)</option>
+                <option value="viudo">Viudo(a)</option>
+              </select>
+              <div class="error-text">Requerido.</div>
+            </div>
+          </div>
+          <div class="form-row" id="fld-drv-idtype-${i}">
+            <label>Tipo de identificación</label>
+            <div class="radio-group" data-idtype-group="${i}">
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="licencia" onchange="onIdTypeChange(${i})"> Licencia de conducir</label>
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="matricula" onchange="onIdTypeChange(${i})"> Matrícula</label>
+              <label class="radio-pill"><input type="radio" name="idtype-${i}" value="pasaporte" onchange="onIdTypeChange(${i})"> Pasaporte</label>
+            </div>
+            <div class="error-text">Selecciona un tipo de identificación.</div>
+          </div>
+          <div class="form-row" id="fld-drv-estado-${i}" style="display:none;">
+            <label>Estado que emitió la licencia</label>
+            <input type="text" class="drv-estado" data-idx="${i}" list="us-states-list" placeholder="Escribe para buscar, ej. Texas" autocomplete="off">
+            <div class="error-text">Selecciona el estado.</div>
+          </div>
+          <div class="form-row" id="fld-drv-pais-${i}" style="display:none;">
+            <label>País</label>
+            <input type="text" class="drv-pais" data-idx="${i}" list="countries-list" placeholder="Escribe para buscar, ej. Honduras" autocomplete="off">
+            <div class="error-text">Selecciona el país.</div>
+          </div>
+          <div class="form-row" id="fld-drv-idnumero-${i}">
+            <label>Número de identificación</label>
+            <input type="text" class="drv-idnumero" data-idx="${i}">
+            <div class="error-text">Requerido.</div>
+          </div>
+        </div>
+      `;
+    }
+    container.innerHTML = html;
+  }
+
+  function onStep3Continue(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    let ok = true;
+    for(let i = 1; i <= qty; i++){
+      const nombre = document.querySelector(`.drv-nombre[data-idx="${i}"]`).value.trim();
+      const apellido = document.querySelector(`.drv-apellido[data-idx="${i}"]`).value.trim();
+      const nacimiento = document.querySelector(`.drv-nacimiento[data-idx="${i}"]`).value.trim();
+      const estadocivil = document.querySelector(`.drv-estadocivil[data-idx="${i}"]`).value;
+      const idtype = document.querySelector(`input[name="idtype-${i}"]:checked`);
+      const idnumero = document.querySelector(`.drv-idnumero[data-idx="${i}"]`).value.trim();
+
+      markFieldError(`fld-drv-nombre-${i}`, !nombre); if(!nombre) ok = false;
+      markFieldError(`fld-drv-apellido-${i}`, !apellido); if(!apellido) ok = false;
+      markFieldError(`fld-drv-nacimiento-${i}`, !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError(`fld-drv-estadocivil-${i}`, !estadocivil); if(!estadocivil) ok = false;
+      markFieldError(`fld-drv-idtype-${i}`, !idtype); if(!idtype) ok = false;
+      markFieldError(`fld-drv-idnumero-${i}`, !idnumero); if(!idnumero) ok = false;
+
+      if(idtype && idtype.value === 'licencia'){
+        const estado = document.querySelector(`.drv-estado[data-idx="${i}"]`).value.trim();
+        markFieldError(`fld-drv-estado-${i}`, !US_STATES.includes(estado)); if(!US_STATES.includes(estado)) ok = false;
+      } else if(idtype && (idtype.value === 'matricula' || idtype.value === 'pasaporte')){
+        const pais = document.querySelector(`.drv-pais[data-idx="${i}"]`).value.trim();
+        markFieldError(`fld-drv-pais-${i}`, !COUNTRIES.includes(pais)); if(!COUNTRIES.includes(pais)) ok = false;
+      }
+    }
+    if(!ok){ showTopError('Completa los datos de todos los conductores antes de continuar.'); return; }
+    goToStep(4);
+  }
+
+  function collectDrivers(){
+    const qty = parseInt(document.getElementById('p3-cantidad').value, 10);
+    // La dirección ya se pidió una sola vez en el Paso 1 — todos los conductores la comparten.
+    const direccionPrincipal = buildFullAddress();
+    const drivers = [];
+    for(let i = 1; i <= qty; i++){
+      const idtype = document.querySelector(`input[name="idtype-${i}"]:checked`);
+      const idTypeValue = idtype ? idtype.value : '';
+      let idRegion = '';
+      if(idTypeValue === 'licencia'){
+        idRegion = document.querySelector(`.drv-estado[data-idx="${i}"]`).value.trim();
+      } else if(idTypeValue === 'matricula' || idTypeValue === 'pasaporte'){
+        idRegion = document.querySelector(`.drv-pais[data-idx="${i}"]`).value.trim();
+      }
+      drivers.push({
+        nombre: document.querySelector(`.drv-nombre[data-idx="${i}"]`).value.trim(),
+        nombre2: document.querySelector(`.drv-nombre2[data-idx="${i}"]`).value.trim(),
+        apellido: document.querySelector(`.drv-apellido[data-idx="${i}"]`).value.trim(),
+        direccion: direccionPrincipal,
+        fecha_nacimiento: toISODate(document.querySelector(`.drv-nacimiento[data-idx="${i}"]`).value.trim()),
+        estado_civil: document.querySelector(`.drv-estadocivil[data-idx="${i}"]`).value,
+        id_type: idTypeValue,
+        id_region: idRegion,
+        id_numero: document.querySelector(`.drv-idnumero[data-idx="${i}"]`).value.trim()
+      });
+    }
+    return drivers;
+  }
+
+  // ---------- Paso 4: Vehículos ----------
+  function renderVehicles(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    const container = document.getElementById('vehiclesContainer');
+    let html = '';
+    for(let i = 1; i <= qty; i++){
+      html += `
+        <div class="sub-card">
+          <h3>Vehículo ${i}</h3>
+          <div class="form-row" id="fld-veh-vin-${i}">
+            <label>VIN (número de identificación del vehículo)</label>
+            <input type="text" class="veh-vin" data-idx="${i}" maxlength="17" style="text-transform:uppercase;" oninput="onVinInput(this)">
+            <div class="vin-hint" id="vin-hint-${i}">Debe tener 17 caracteres.</div>
+            <div class="error-text">El VIN debe tener exactamente 17 caracteres válidos.</div>
+          </div>
+          <div class="form-row" id="fld-veh-cobertura-${i}">
+            <label>Cobertura
+              <button type="button" class="info-btn" onclick="toggleInfo('info-liability-${i}')">?</button>
+            </label>
+            <div class="info-box" id="info-liability-${i}">
+              <strong>Liability:</strong> es la cobertura mínima requerida por ley. Paga por los daños y lesiones que tú le causas a otras personas o a otros vehículos cuando el accidente es tu culpa. No cubre daños a tu propio vehículo.<br><br>
+              <strong>Full Coverage:</strong> incluye Liability, más cobertura para tu propio vehículo — ya sea por choque (Collision) o por otros eventos como robo, vandalismo, incendio o fenómenos naturales (Comprehensive).
+            </div>
+            <div class="radio-group" style="margin-top:8px;" data-cov-group="${i}">
+              <label class="radio-pill"><input type="checkbox" class="veh-cov-liability" data-idx="${i}" onchange="onCoverageChange(${i})"> Liability</label>
+              <label class="radio-pill"><input type="checkbox" class="veh-cov-full" data-idx="${i}" onchange="onCoverageChange(${i})"> Full Coverage</label>
+            </div>
+            <div class="error-text">Selecciona al menos una cobertura, o agrega otra abajo.</div>
+          </div>
+          <div class="form-row" id="fld-veh-deducible-${i}" style="display:none;">
+            <label>Deducible
+              <button type="button" class="info-btn" onclick="toggleInfo('info-deducible-${i}')">?</button>
+            </label>
+            <div class="info-box" id="info-deducible-${i}">
+              El deducible es la cantidad que tú pagas de tu bolsillo antes de que la aseguradora empiece a cubrir el resto del daño a tu vehículo. Un deducible más alto generalmente baja tu mensualidad, pero pagarías más de tu bolsillo si tienes un accidente.
+            </div>
+            <select class="veh-deducible" data-idx="${i}" style="margin-top:8px;">
+              <option value="">Selecciona</option>
+              ${document.getElementById('p1-producto').value === 'motocicleta'
+                ? '<option value="250">$250</option><option value="500">$500</option><option value="1000">$1,000</option>'
+                : '<option value="500">$500</option><option value="1000">$1,000</option><option value="2000">$2,000</option>'}
+            </select>
+            <div class="error-text">Selecciona un deducible.</div>
+          </div>
+          <div id="fld-veh-otra-toggle-${i}" style="margin-top:4px;">
+            <a href="#" onclick="event.preventDefault(); showOtherCoverage(${i});" style="color:var(--blue); font-weight:600; font-size:14px;">+ Agregar otra cobertura</a>
+          </div>
+          <div class="form-row" id="fld-veh-otra-${i}" style="display:none; margin-top:10px;">
+            <label>¿Cuál otra cobertura necesitas?</label>
+            <input type="text" class="veh-otra-detalle" data-idx="${i}" placeholder="Ej. Rental Reimbursement, Roadside Assistance, GAP...">
+            <div class="error-text">Especifica qué cobertura necesitas.</div>
+          </div>
+        </div>
+      `;
+    }
+    container.innerHTML = html;
+  }
+
+  function onCoverageChange(i){
+    const full = document.querySelector(`.veh-cov-full[data-idx="${i}"]`).checked;
+    document.getElementById(`fld-veh-deducible-${i}`).style.display = full ? 'block' : 'none';
+  }
+
+  function showOtherCoverage(i){
+    document.getElementById(`fld-veh-otra-${i}`).style.display = 'block';
+    document.getElementById(`fld-veh-otra-toggle-${i}`).style.display = 'none';
+    document.querySelector(`.veh-otra-detalle[data-idx="${i}"]`).focus();
+  }
+
+  function toggleInfo(id){
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  function onVinInput(el){
+    el.value = el.value.toUpperCase();
+    const hint = document.getElementById('vin-hint-' + el.dataset.idx);
+    if(el.value.length === 0){ hint.textContent = 'Debe tener 17 caracteres.'; hint.style.color = ''; return; }
+    if(isValidVin(el.value)){ hint.textContent = '✓ VIN válido.'; hint.style.color = 'var(--success)'; }
+    else { hint.textContent = `Tiene ${el.value.length} de 17 caracteres, o contiene letras no válidas (I, O, Q no se usan en un VIN).`; hint.style.color = 'var(--danger)'; }
+  }
+
+  function isValidVin(vin){
+    return /^[A-HJ-NPR-Z0-9]{17}$/.test((vin || '').trim());
+  }
+
+  function onStep4Continue(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    let ok = true;
+    for(let i = 1; i <= qty; i++){
+      const vin = document.querySelector(`.veh-vin[data-idx="${i}"]`).value.trim();
+      const liability = document.querySelector(`.veh-cov-liability[data-idx="${i}"]`).checked;
+      const full = document.querySelector(`.veh-cov-full[data-idx="${i}"]`).checked;
+      const otraVisible = document.getElementById(`fld-veh-otra-${i}`).style.display !== 'none';
+      const otraDetalle = document.querySelector(`.veh-otra-detalle[data-idx="${i}"]`).value.trim();
+      const hayAlgunaCobertura = liability || full || (otraVisible && otraDetalle);
+
+      markFieldError(`fld-veh-vin-${i}`, !isValidVin(vin)); if(!isValidVin(vin)) ok = false;
+      markFieldError(`fld-veh-cobertura-${i}`, !hayAlgunaCobertura); if(!hayAlgunaCobertura) ok = false;
+      if(otraVisible){
+        markFieldError(`fld-veh-otra-${i}`, !otraDetalle); if(!otraDetalle) ok = false;
+      }
+      if(full){
+        const deducible = document.querySelector(`.veh-deducible[data-idx="${i}"]`).value;
+        markFieldError(`fld-veh-deducible-${i}`, !deducible); if(!deducible) ok = false;
+      }
+    }
+    if(!ok){ showTopError('Revisa los datos de los vehículos — hay algo pendiente o el VIN no es válido.'); return; }
+    goToStep('5');
+  }
+
+  function collectVehicles(){
+    const qty = parseInt(document.getElementById('p4-cantidad').value, 10);
+    const vehicles = [];
+    for(let i = 1; i <= qty; i++){
+      const liability = document.querySelector(`.veh-cov-liability[data-idx="${i}"]`).checked;
+      const full = document.querySelector(`.veh-cov-full[data-idx="${i}"]`).checked;
+      const otraVisible = document.getElementById(`fld-veh-otra-${i}`).style.display !== 'none';
+      const otraDetalle = otraVisible ? document.querySelector(`.veh-otra-detalle[data-idx="${i}"]`).value.trim() : '';
+      const coberturas = [];
+      if(liability) coberturas.push('liability');
+      if(full) coberturas.push('full');
+      if(otraDetalle) coberturas.push('otra');
+      vehicles.push({
+        vin: document.querySelector(`.veh-vin[data-idx="${i}"]`).value.trim().toUpperCase(),
+        coberturas,
+        otra_detalle: otraDetalle,
+        deducible: full ? document.querySelector(`.veh-deducible[data-idx="${i}"]`).value : ''
+      });
+    }
+    return vehicles;
+  }
+
+  // ---------- Paso "Detalles" (renters / home / eo / medico) ----------
+  function onEoTipoChange(){
+    const tipo = document.querySelector('input[name="eo-tipo"]:checked')?.value;
+    document.getElementById('eo-agente-block').style.display = tipo === 'agente' ? 'block' : 'none';
+    document.getElementById('eo-agencia-block').style.display = tipo === 'agencia' ? 'block' : 'none';
+  }
+
+  function onEoMailSameChange(){
+    const same = document.querySelector('input[name="eo-mail-same"]:checked')?.value;
+    document.getElementById('eo-mail-block').style.display = same === 'no' ? 'block' : 'none';
+  }
+
+  function onVidaTipoChange(){
+    const tipo = document.querySelector('input[name="v-tipo"]:checked')?.value;
+    document.getElementById('fld-v-terminoanios').style.display = tipo === 'termino' ? 'block' : 'none';
+  }
+
+  function onDetallesContinue(){
+    let ok = true;
+
+    if(flowType === 'renters'){
+      const nacimiento = document.getElementById('r-nacimiento').value.trim();
+      const direccion = document.getElementById('r-direccion').value.trim();
+      const ciudad = document.getElementById('r-ciudad').value.trim();
+      const estado = document.getElementById('r-estado').value.trim();
+      const zip = document.getElementById('r-zip').value.trim();
+      const personas = document.getElementById('r-personas').value;
+      markFieldError('fld-r-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError('fld-r-direccion', !direccion); if(!direccion) ok = false;
+      markFieldError('fld-r-ciudad', !ciudad); if(!ciudad) ok = false;
+      markFieldError('fld-r-estado', !estado); if(!estado) ok = false;
+      markFieldError('fld-r-zip', !/^\d{5}$/.test(zip)); if(!/^\d{5}$/.test(zip)) ok = false;
+      markFieldError('fld-r-personas', !personas); if(!personas) ok = false;
+
+    } else if(flowType === 'home'){
+      const nombre = document.getElementById('h-nombre').value.trim();
+      const apellido = document.getElementById('h-apellido').value.trim();
+      const nacimiento = document.getElementById('h-nacimiento').value.trim();
+      const direccion = document.getElementById('h-direccion').value.trim();
+      const ciudad = document.getElementById('h-ciudad').value.trim();
+      const estado = document.getElementById('h-estado').value.trim();
+      const zip = document.getElementById('h-zip').value.trim();
+      const fechacompra = document.getElementById('h-fechacompra').value.trim();
+      const bomberos = document.getElementById('h-bomberos').value;
+      const hidrante = document.getElementById('h-hidrante').value;
+      const deducible = document.getElementById('h-deducible').value;
+      markFieldError('fld-h-nombre', !nombre); if(!nombre) ok = false;
+      markFieldError('fld-h-apellido', !apellido); if(!apellido) ok = false;
+      markFieldError('fld-h-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError('fld-h-direccion', !direccion); if(!direccion) ok = false;
+      markFieldError('fld-h-ciudad', !ciudad); if(!ciudad) ok = false;
+      markFieldError('fld-h-estado', !estado); if(!estado) ok = false;
+      markFieldError('fld-h-zip', !/^\d{5}$/.test(zip)); if(!/^\d{5}$/.test(zip)) ok = false;
+      markFieldError('fld-h-fechacompra', !isValidDateString(fechacompra)); if(!isValidDateString(fechacompra)) ok = false;
+      markFieldError('fld-h-bomberos', bomberos === ''); if(bomberos === '') ok = false;
+      markFieldError('fld-h-hidrante', hidrante === ''); if(hidrante === '') ok = false;
+      markFieldError('fld-h-deducible', !deducible); if(!deducible) ok = false;
+      if(document.querySelector('input[name="h-piscina"]:checked')?.value === 'si'){
+        if(!document.getElementById('h-piscina-tipo').value.trim()) ok = false;
+      }
+      const reclamoSi = document.querySelector('input[name="h-reclamos"]:checked')?.value === 'si';
+      if(reclamoSi){
+        const detalle = document.getElementById('h-reclamo-detalle-txt').value.trim();
+        if(!detalle) ok = false;
+      }
+
+    } else if(flowType === 'eo'){
+      const tipo = document.querySelector('input[name="eo-tipo"]:checked')?.value;
+      if(!tipo){ ok = false; }
+      if(tipo === 'agente'){
+        const licencias = document.querySelectorAll('input[name="eo-licencia"]:checked');
+        markFieldError('fld-eo-licencia', licencias.length === 0); if(licencias.length === 0) ok = false;
+        const experiencia = document.getElementById('eo-experiencia').value;
+        const ingresos = document.getElementById('eo-ingresos').value;
+        markFieldError('fld-eo-experiencia', experiencia === ''); if(experiencia === '') ok = false;
+        markFieldError('fld-eo-ingresos', ingresos === ''); if(ingresos === '') ok = false;
+      } else if(tipo === 'agencia'){
+        const entidad = document.getElementById('eo-entidad').value;
+        const anocreacion = document.getElementById('eo-anocreacion').value;
+        const ciaDireccion = document.getElementById('eo-cia-direccion').value.trim();
+        const ciaCiudad = document.getElementById('eo-cia-ciudad').value.trim();
+        const ciaEstado = document.getElementById('eo-cia-estado').value.trim();
+        const ciaZip = document.getElementById('eo-cia-zip').value.trim();
+        const mailSame = document.querySelector('input[name="eo-mail-same"]:checked');
+        const lineas = document.querySelectorAll('input[name="eo-lineas"]:checked');
+        const proyeccion = document.getElementById('eo-proyeccion').value;
+        const empleados = document.getElementById('eo-empleados').value;
+        const payroll = document.getElementById('eo-payroll').value;
+        markFieldError('fld-eo-entidad', !entidad); if(!entidad) ok = false;
+        markFieldError('fld-eo-anocreacion', !anocreacion); if(!anocreacion) ok = false;
+        markFieldError('fld-eo-cia-direccion', !ciaDireccion); if(!ciaDireccion) ok = false;
+        markFieldError('fld-eo-cia-ciudad', !ciaCiudad); if(!ciaCiudad) ok = false;
+        markFieldError('fld-eo-cia-estado', !ciaEstado); if(!ciaEstado) ok = false;
+        markFieldError('fld-eo-cia-zip', !/^\d{5}$/.test(ciaZip)); if(!/^\d{5}$/.test(ciaZip)) ok = false;
+        if(!mailSame) ok = false;
+        if(mailSame && mailSame.value === 'no'){
+          const mDireccion = document.getElementById('eo-mail-direccion').value.trim();
+          const mCiudad = document.getElementById('eo-mail-ciudad').value.trim();
+          const mEstado = document.getElementById('eo-mail-estado').value.trim();
+          const mZip = document.getElementById('eo-mail-zip').value.trim();
+          markFieldError('fld-eo-mail-direccion', !mDireccion); if(!mDireccion) ok = false;
+          markFieldError('fld-eo-mail-ciudad', !mCiudad); if(!mCiudad) ok = false;
+          markFieldError('fld-eo-mail-estado', !mEstado); if(!mEstado) ok = false;
+          markFieldError('fld-eo-mail-zip', !/^\d{5}$/.test(mZip)); if(!/^\d{5}$/.test(mZip)) ok = false;
+        }
+        markFieldError('fld-eo-lineas', lineas.length === 0); if(lineas.length === 0) ok = false;
+        markFieldError('fld-eo-proyeccion', proyeccion === ''); if(proyeccion === '') ok = false;
+        markFieldError('fld-eo-empleados', empleados === ''); if(empleados === '') ok = false;
+        markFieldError('fld-eo-payroll', payroll === ''); if(payroll === '') ok = false;
+      }
+
+    } else if(flowType === 'medico'){
+      const nombre = document.getElementById('m-nombre').value.trim();
+      const apellido = document.getElementById('m-apellido').value.trim();
+      const nacimiento = document.getElementById('m-nacimiento').value.trim();
+      const civil = document.getElementById('m-civil').value;
+      const idfiscal = document.querySelector('input[name="m-idfiscal"]:checked');
+      const ingresos = document.getElementById('m-ingresos').value;
+      const miembros = document.getElementById('m-miembros').value;
+      markFieldError('fld-m-nombre', !nombre); if(!nombre) ok = false;
+      markFieldError('fld-m-apellido', !apellido); if(!apellido) ok = false;
+      markFieldError('fld-m-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError('fld-m-civil', !civil); if(!civil) ok = false;
+      markFieldError('fld-m-idfiscal', !idfiscal); if(!idfiscal) ok = false;
+      markFieldError('fld-m-ingresos', ingresos === ''); if(ingresos === '') ok = false;
+      markFieldError('fld-m-miembros', !miembros); if(!miembros) ok = false;
+
+    } else if(flowType === 'vida'){
+      const nombre = document.getElementById('v-nombre').value.trim();
+      const apellido = document.getElementById('v-apellido').value.trim();
+      const nacimiento = document.getElementById('v-nacimiento').value.trim();
+      const ssnitin = document.querySelector('input[name="v-ssnitin"]:checked');
+      const estatus = document.querySelector('input[name="v-estatus"]:checked');
+      const monto = document.getElementById('v-monto').value;
+      const tipo = document.querySelector('input[name="v-tipo"]:checked');
+      const presupuesto = document.getElementById('v-presupuesto').value;
+      markFieldError('fld-v-nombre', !nombre); if(!nombre) ok = false;
+      markFieldError('fld-v-apellido', !apellido); if(!apellido) ok = false;
+      markFieldError('fld-v-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
+      markFieldError('fld-v-ssnitin', !ssnitin); if(!ssnitin) ok = false;
+      markFieldError('fld-v-estatus', !estatus); if(!estatus) ok = false;
+      markFieldError('fld-v-monto', monto === ''); if(monto === '') ok = false;
+      markFieldError('fld-v-tipo', !tipo); if(!tipo) ok = false;
+      if(tipo && tipo.value === 'termino'){
+        const anios = document.getElementById('v-terminoanios').value;
+        markFieldError('fld-v-terminoanios', !anios); if(!anios) ok = false;
+      }
+      markFieldError('fld-v-presupuesto', presupuesto === ''); if(presupuesto === '') ok = false;
+    }
+
+    if(!ok){ showTopError('Completa los campos marcados en rojo antes de continuar.'); return; }
+    goToStep(5);
+  }
+
+  function collectDetalles(){
+    if(flowType === 'renters'){
+      const tieneMascotas = document.querySelector('input[name="r-mascotas"]:checked')?.value === 'si';
+      const direccionCompleta = [
+        document.getElementById('r-direccion').value.trim(),
+        document.getElementById('r-direccion2').value.trim()
+      ].filter(Boolean).join(', ') + `, ${document.getElementById('r-ciudad').value.trim()}, ${document.getElementById('r-estado').value.trim()} ${document.getElementById('r-zip').value.trim()}`;
+      return {
+        fecha_nacimiento: toISODate(document.getElementById('r-nacimiento').value.trim()),
+        direccion_propiedad: direccionCompleta,
+        personas_hogar: document.getElementById('r-personas').value,
+        tiene_mascotas: tieneMascotas ? 'Sí' : 'No',
+        mascotas_cantidad: tieneMascotas ? document.getElementById('r-mascotas-cantidad').value : '',
+        mascotas_tipo: tieneMascotas ? document.getElementById('r-mascotas-tipo').value.trim() : '',
+        comentario_cobertura: document.getElementById('r-comentario').value.trim()
+      };
+    }
+    if(flowType === 'home'){
+      const remodeloVal = document.querySelector('input[name="h-remodelo"]:checked')?.value || '';
+      const REMODELO_LABELS = { no: 'No', parcial: 'Remodelación parcial', completa: 'Remodelación completa' };
+      const hipoteca = document.querySelector('input[name="h-hipoteca"]:checked')?.value || '';
+      const reclamoSi = document.querySelector('input[name="h-reclamos"]:checked')?.value === 'si';
+      const piscinaSi = document.querySelector('input[name="h-piscina"]:checked')?.value === 'si';
+      const panelesSi = document.querySelector('input[name="h-paneles"]:checked')?.value === 'si';
+      const mascotasSi = document.querySelector('input[name="h-mascotas"]:checked')?.value === 'si';
+      const direccionCompleta = [
+        document.getElementById('h-direccion').value.trim(),
+        document.getElementById('h-direccion2').value.trim()
+      ].filter(Boolean).join(', ') + `, ${document.getElementById('h-ciudad').value.trim()}, ${document.getElementById('h-estado').value.trim()} ${document.getElementById('h-zip').value.trim()}`;
+      return {
+        nombre_propietario: [document.getElementById('h-nombre').value.trim(), document.getElementById('h-nombre2').value.trim(), document.getElementById('h-apellido').value.trim()].filter(Boolean).join(' '),
+        fecha_nacimiento: toISODate(document.getElementById('h-nacimiento').value.trim()),
+        direccion_propiedad: direccionCompleta,
+        fecha_compra: toISODate(document.getElementById('h-fechacompra').value.trim()),
+        remodelo_bano_cocina: REMODELO_LABELS[remodeloVal] || '',
+        tiene_piscina: piscinaSi ? 'Sí' : 'No',
+        piscina_tipo: piscinaSi ? document.getElementById('h-piscina-tipo').value.trim() : '',
+        tiene_paneles_solares: panelesSi ? 'Sí' : 'No',
+        tiene_mascotas: mascotasSi ? 'Sí' : 'No',
+        mascotas_cantidad: mascotasSi ? document.getElementById('h-mascotas-cantidad').value : '',
+        mascotas_tipo: mascotasSi ? document.getElementById('h-mascotas-tipo').value.trim() : '',
+        millas_bomberos: document.getElementById('h-bomberos').value,
+        pies_hidrante: document.getElementById('h-hidrante').value,
+        estatus_hipoteca: hipoteca === 'hipotecada' ? 'Hipotecada' : (hipoteca === 'pagada' ? 'Pagada por completo' : ''),
+        reclamos_5_anos: reclamoSi ? 'Sí' : 'No',
+        reclamo_detalle: reclamoSi ? document.getElementById('h-reclamo-detalle-txt').value.trim() : '',
+        deducible_porcentaje: document.getElementById('h-deducible').value
+      };
+    }
+    if(flowType === 'eo'){
+      const tipo = document.querySelector('input[name="eo-tipo"]:checked')?.value || '';
+      if(tipo === 'agente'){
+        const licencias = [...document.querySelectorAll('input[name="eo-licencia"]:checked')].map(el => EO_LINEA_LABELS[el.value] || el.value);
+        const otroTxt = document.getElementById('eo-licencia-otro-txt').value.trim();
+        return {
+          eo_tipo: 'Agente independiente',
+          licencias: licencias.join(', ') + (otroTxt ? ` (${otroTxt})` : ''),
+          anos_experiencia: document.getElementById('eo-experiencia').value,
+          ingresos_proyectados: document.getElementById('eo-ingresos').value
+        };
+      } else {
+        const lineas = [...document.querySelectorAll('input[name="eo-lineas"]:checked')].map(el => EO_LINEA_LABELS[el.value] || el.value);
+        const otroTxt = document.getElementById('eo-lineas-otro-txt').value.trim();
+        const entidadVal = document.getElementById('eo-entidad').value;
+        const entidadOtroTxt = document.getElementById('eo-entidad-otro-txt').value.trim();
+        const ciaDireccionCompleta = [
+          document.getElementById('eo-cia-direccion').value.trim(),
+          document.getElementById('eo-cia-direccion2').value.trim()
+        ].filter(Boolean).join(', ') + `, ${document.getElementById('eo-cia-ciudad').value.trim()}, ${document.getElementById('eo-cia-estado').value.trim()} ${document.getElementById('eo-cia-zip').value.trim()}`;
+        const mailSame = document.querySelector('input[name="eo-mail-same"]:checked')?.value === 'si';
+        const mailDireccionCompleta = mailSame ? ciaDireccionCompleta : [
+          document.getElementById('eo-mail-direccion').value.trim(),
+          document.getElementById('eo-mail-direccion2').value.trim()
+        ].filter(Boolean).join(', ') + `, ${document.getElementById('eo-mail-ciudad').value.trim()}, ${document.getElementById('eo-mail-estado').value.trim()} ${document.getElementById('eo-mail-zip').value.trim()}`;
+        return {
+          eo_tipo: 'Agencia',
+          tipo_entidad: (EO_ENTIDAD_LABELS[entidadVal] || entidadVal) + (entidadVal === 'otro' && entidadOtroTxt ? ` (${entidadOtroTxt})` : ''),
+          ano_creacion: document.getElementById('eo-anocreacion').value,
+          direccion_compania: ciaDireccionCompleta,
+          direccion_correspondencia: mailDireccionCompleta,
+          lineas_seguro: lineas.join(', ') + (otroTxt ? ` (${otroTxt})` : ''),
+          proyeccion_ganancias: document.getElementById('eo-proyeccion').value,
+          cantidad_empleados: document.getElementById('eo-empleados').value,
+          payroll_empleados: document.getElementById('eo-payroll').value
+        };
+      }
+    }
+    if(flowType === 'medico'){
+      const idfiscal = document.querySelector('input[name="m-idfiscal"]:checked')?.value;
+      return {
+        nombre_completo: [document.getElementById('m-nombre').value.trim(), document.getElementById('m-nombre2').value.trim(), document.getElementById('m-apellido').value.trim()].filter(Boolean).join(' '),
+        fecha_nacimiento: toISODate(document.getElementById('m-nacimiento').value.trim()),
+        estado_civil: CIVIL_LABELS[document.getElementById('m-civil').value] || '',
+        tipo_id_fiscal: idfiscal === 'ssn' ? 'Social Security Number (SSN)' : (idfiscal === 'itin' ? 'ITIN' : ''),
+        ingresos_mensuales_hogar: document.getElementById('m-ingresos').value,
+        miembros_hogar: document.getElementById('m-miembros').value
+      };
+    }
+    if(flowType === 'vida'){
+      const ESTATUS_LABELS = { pasaporte: 'Pasaporte', permiso_trabajo: 'Permiso de trabajo', residencia: 'Residencia', ciudadano: 'Ciudadano americano' };
+      const TIPO_VIDA_LABELS = { termino: 'Seguro a término', iul: 'IUL (Index Universal Life)' };
+      const ssnitin = document.querySelector('input[name="v-ssnitin"]:checked')?.value;
+      const estatus = document.querySelector('input[name="v-estatus"]:checked')?.value;
+      const tipo = document.querySelector('input[name="v-tipo"]:checked')?.value;
+      return {
+        nombre_completo: [document.getElementById('v-nombre').value.trim(), document.getElementById('v-nombre2').value.trim(), document.getElementById('v-apellido').value.trim()].filter(Boolean).join(' '),
+        fecha_nacimiento: toISODate(document.getElementById('v-nacimiento').value.trim()),
+        ssn_itin: ssnitin === 'ssn' ? 'Seguro Social (SSN)' : (ssnitin === 'itin' ? 'ITIN' : (ssnitin === 'ninguno' ? 'Ninguno' : '')),
+        estatus_legal: ESTATUS_LABELS[estatus] || '',
+        monto_cobertura: document.getElementById('v-monto').value,
+        tipo_seguro: TIPO_VIDA_LABELS[tipo] || '',
+        termino_anios: tipo === 'termino' ? document.getElementById('v-terminoanios').value : '',
+        presupuesto_mensual: document.getElementById('v-presupuesto').value
+      };
+    }
+    return {};
+  }
+
+  // ---------- Paso 5: resumen y envío ----------
+  const DETALLES_LABELS = {
+    // Renters
+    fecha_nacimiento: 'Fecha de nacimiento', direccion_propiedad: 'Dirección de la propiedad',
+    personas_hogar: 'Personas en el hogar', tiene_mascotas: '¿Tiene mascotas?',
+    mascotas_cantidad: 'Cantidad de mascotas', mascotas_tipo: 'Tipo de mascotas',
+    comentario_cobertura: 'Cobertura específica solicitada',
+    // Home (algunas claves se comparten con renters arriba)
+    nombre_propietario: 'Nombre del propietario', fecha_compra: 'Fecha de compra de la propiedad',
+    remodelo_bano_cocina: '¿Remodeló baño/cocina?', tiene_piscina: '¿Tiene piscina?', piscina_tipo: 'Tipo de piscina',
+    tiene_paneles_solares: '¿Tiene paneles solares?', millas_bomberos: 'Millas a la estación de bomberos',
+    pies_hidrante: 'Pies al hidrante más cercano', estatus_hipoteca: 'Estatus de la propiedad',
+    reclamos_5_anos: '¿Reclamos en los últimos 5 años?', reclamo_detalle: 'Detalle del reclamo',
+    deducible_porcentaje: 'Deducible',
+    // E&O
+    eo_tipo: 'Tipo', licencias: 'Licencias', anos_experiencia: 'Años de experiencia',
+    ingresos_proyectados: 'Ingresos proyectados (12 meses)', tipo_entidad: 'Tipo de entidad',
+    ano_creacion: 'Año de creación', direccion_compania: 'Dirección de la compañía',
+    direccion_correspondencia: 'Dirección de correspondencia', lineas_seguro: 'Líneas de seguro',
+    proyeccion_ganancias: 'Proyección de ganancias (12 meses)', cantidad_empleados: 'Cantidad de empleados',
+    payroll_empleados: 'Payroll de empleados',
+    // Médico
+    nombre_completo: 'Nombre completo', estado_civil: 'Estado civil', tipo_id_fiscal: 'Identificación fiscal',
+    ingresos_mensuales_hogar: 'Ingresos mensuales del hogar', miembros_hogar: 'Miembros del núcleo familiar',
+    // Vida
+    ssn_itin: 'SSN / ITIN', estatus_legal: 'Estatus legal', monto_cobertura: 'Monto de cobertura deseado',
+    tipo_seguro: 'Tipo de seguro', termino_anios: 'Años del término', presupuesto_mensual: 'Presupuesto mensual'
+  };
+  const MONEY_KEYS = ['ingresos_proyectados','proyeccion_ganancias','payroll_empleados','ingresos_mensuales_hogar','monto_cobertura','presupuesto_mensual'];
+  const PERCENT_KEYS = ['deducible_porcentaje'];
+
+  function renderDetallesSummaryHTML(){
+    const d = collectDetalles();
+    const rows = Object.keys(d)
+      .filter(k => d[k] !== '' && d[k] !== null && d[k] !== undefined)
+      .map(k => {
+        let val = d[k];
+        if(MONEY_KEYS.includes(k)) val = '$' + val;
+        if(PERCENT_KEYS.includes(k)) val = val + '%';
+        return `<div style="margin-top:4px;"><strong>${DETALLES_LABELS[k] || k}:</strong> ${val}</div>`;
+      });
+    return rows.join('');
+  }
+
+  function renderSummary(){
+    const nombre = document.getElementById('p1-nombre').value.trim();
+    const producto = document.getElementById('p1-producto').value;
+    let html = `<div><strong>Nombre:</strong> ${nombre} ${document.getElementById('p1-apellido').value.trim()}</div>`;
+    html += `<div><strong>Seguro solicitado:</strong> ${PRODUCT_LABELS[producto] || producto}</div>`;
+    if(flowType === 'auto'){
+      const drivers = collectDrivers();
+      const vehicles = collectVehicles();
+      html += `<div style="margin-top:8px;"><strong>Conductores:</strong> ${drivers.length}</div>`;
+      html += `<div><strong>Vehículos:</strong> ${vehicles.length}</div>`;
+    } else if(flowType !== 'simple'){
+      html += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">${renderDetallesSummaryHTML()}</div>`;
+    }
+    document.getElementById('summaryBox').innerHTML = html;
+    document.getElementById('step5BackBtn').style.display = flowType !== 'simple' ? 'block' : 'none';
+  }
+
+  function goBackFromStep5(){
+    if(flowType === 'auto') goToStep(4);
+    else if(flowType !== 'simple') goToStep('detalles');
+    else goToStep(1);
+  }
+
+  async function submitQuote(){
+    const submitBtn = document.getElementById('submitBtn');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Enviando...'; }
+
+    const producto = document.getElementById('p1-producto').value;
+    const payload = {
+      principal: buildPrincipalPayload(),
+      client_id: createdClientId || null,
+      quote_id: createdQuoteId || null
+    };
+
+    if(flowType === 'auto'){
+      payload.elegibilidad = {
+        seguro_6meses: (document.querySelector('input[name="seguro6meses"]:checked')?.value) || null,
+        dueño_casa: (document.querySelector('input[name="dueñocasa"]:checked')?.value) || null
+      };
+      payload.conductores = collectDrivers();
+      payload.vehiculos = collectVehicles();
+    } else if(flowType !== 'simple'){
+      payload.detalles = collectDetalles();
+    }
+
+    try{
+      const res = await fetch(SUPABASE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(!res.ok || data.error){
+        throw new Error(data.error || 'No se pudo enviar tu solicitud.');
+      }
+      showThankYou(producto);
+    } catch(err){
+      showTopError('Hubo un problema al enviar tu solicitud: ' + err.message + '. Puedes intentar de nuevo, o llamarnos directamente.');
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Enviar solicitud'; }
+      if(flowType === 'simple'){ goToStep(1); }
+    }
+  }
+
+  function showThankYou(producto){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('thankyouStep').classList.add('active');
+    document.getElementById('stepsIndicator').innerHTML = '';
+    const text = flowType !== 'simple'
+      ? 'Un agente se pondrá en contacto contigo muy pronto — ya está comenzando a trabajar en tu cotización. Te estaremos escribiendo por mensaje de texto o llamada.'
+      : `Gracias por querer cotizar con nosotros tu seguro de ${(PRODUCT_LABELS[producto] || producto).toLowerCase()}. Un agente se pondrá en contacto contigo por mensaje de texto o llamada.`;
+    document.getElementById('thankyouText').textContent = text;
+  }
+
+  function onDatePickerChange(pickerEl){
+    // El input type=date entrega la fecha en formato AAAA-MM-DD — la convertimos
+    // al MM/DD/AAAA que usa el campo de texto visible, para que ambas formas
+    // (escribir o elegir del calendario) terminen guardando lo mismo.
+    const iso = pickerEl.value;
+    if(!iso) return;
+    const [y, m, d] = iso.split('-');
+    const textInput = pickerEl.previousElementSibling;
+    textInput.value = `${m}/${d}/${y}`;
+  }
+
+  // ---------- Utilidades ----------
+  function maskPhone(el){
+    let v = el.value.replace(/\D/g, '').slice(0, 10);
+    if(v.length >= 7) v = '(' + v.slice(0,3) + ') ' + v.slice(3,6) + '-' + v.slice(6);
+    else if(v.length >= 4) v = '(' + v.slice(0,3) + ') ' + v.slice(3);
+    else if(v.length > 0) v = '(' + v;
+    el.value = v;
+  }
+
+  function onZipInput(el){
+    el.value = el.value.replace(/\D/g, '').slice(0, 5);
+  }
+
+  function maskDate(el){
+    let v = el.value.replace(/\D/g, '').slice(0, 8);
+    if(v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+    else if(v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+    el.value = v;
+  }
+
+  function isValidDateString(str){
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
+    if(!m) return false;
+    const month = parseInt(m[1],10), day = parseInt(m[2],10), year = parseInt(m[3],10);
+    if(month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > new Date().getFullYear()) return false;
+    return true;
+  }
+
+  function toISODate(str){
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
+    if(!m) return null;
+    return `${m[3]}-${m[1]}-${m[2]}`;
+  }
+
+  renderStepsIndicator();
+  populateDatalists();
+</script>
+
+</body>
+</html>
