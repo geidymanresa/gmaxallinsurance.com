@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --navy:#0B2D6E;
@@ -140,13 +141,7 @@
     'Otro': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.5.4l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.4l-3 3a5 5 0 007 7l1.7-1.7"/></svg>'
   };
 
-  async function sbFetch(path){
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    if(!res.ok) return [];
-    return res.json();
-  }
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   function escapeHtml(s){
     return (s || '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -164,20 +159,22 @@
     const slug = (params.get('a') || '').trim();
     if(!slug){ showNotFound(); return; }
 
-    const pages = await sbFetch(`agent_pages?slug=eq.${encodeURIComponent(slug)}&published=eq.true&select=*`);
-    const page = pages[0];
+    const { data: page, error: pageError } = await sb.from('agent_pages').select('*').eq('slug', slug).eq('published', true).maybeSingle();
+    if(pageError) console.error('agent_pages:', pageError.message);
     if(!page){ showNotFound(); return; }
 
-    const profiles = await sbFetch(`profiles?id=eq.${page.agent_id}&select=full_name,email,phone`);
-    const profile = profiles[0];
+    const { data: profile, error: profileError } = await sb.from('profiles').select('full_name, email, phone').eq('id', page.agent_id).maybeSingle();
+    if(profileError) console.error('profiles:', profileError.message);
     if(!profile){ showNotFound(); return; }
 
-    const [links, licenses] = await Promise.all([
-      sbFetch(`agent_social_links?agent_id=eq.${page.agent_id}&select=*&order=sort_order.asc`),
-      sbFetch(`agent_licenses?agent_id=eq.${page.agent_id}&select=*`)
+    const [{ data: links, error: linksError }, { data: licenses, error: licensesError }] = await Promise.all([
+      sb.from('agent_social_links').select('*').eq('agent_id', page.agent_id).order('sort_order', { ascending: true }),
+      sb.from('agent_licenses').select('*').eq('agent_id', page.agent_id)
     ]);
+    if(linksError) console.error('agent_social_links:', linksError.message);
+    if(licensesError) console.error('agent_licenses:', licensesError.message);
 
-    renderPage(page, profile, links, licenses, slug);
+    renderPage(page, profile, links || [], licenses || [], slug);
   }
 
   function showNotFound(){
