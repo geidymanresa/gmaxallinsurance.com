@@ -614,9 +614,13 @@
               <button type="button" class="info-btn" onclick="toggleInfo('info-m-miembros')">?</button>
             </label>
             <div class="info-box" id="info-m-miembros">Cuenta a tu cónyuge (si aplica) y a tus hijos dependientes que vivan contigo. Si eres tú solo(a), pon 1.</div>
-            <input type="number" min="1" id="m-miembros" style="margin-top:8px;">
+            <input type="number" min="1" id="m-miembros" style="margin-top:8px;" oninput="renderFamiliaMiembrosRows()">
             <div class="error-text">Escribe un número.</div>
           </div>
+        </div>
+        <div id="m-familiaMiembrosWrap" style="display:none; margin-top:10px;">
+          <p class="step-sub" style="margin:0 0 10px;">Persona 1 eres tú — ya está con tu información de arriba. Completa el resto de tu núcleo familiar:</p>
+          <div id="m-familiaMiembrosRows"></div>
         </div>
       </div>
 
@@ -739,6 +743,13 @@
 
   const SUPABASE_FUNCTION_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co/functions/v1/submit-public-quote';
   const SUPABASE_ANON_KEY = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+
+  // Si esta cotización se abrió desde la página de un agente en específico
+  // (ej: pagina-agente.html?a=roberta-ramirez -> link "Cotizar" -> cotizar.html?agente=roberta-ramirez),
+  // mandamos ese slug en el payload para que este cliente le llegue exclusivamente a ese agente.
+  // OJO: esto todavía no hace nada del lado del servidor — falta actualizar la función
+  // submit-public-quote para que lea agent_slug y le asigne el cliente a ese agente.
+  const AGENT_SLUG = new URLSearchParams(window.location.search).get('agente') || null;
 
   const AUTO_PRODUCTS = ['auto_personal', 'auto_comercial', 'motocicleta'];
   const RENTERS_PRODUCTS = ['renters'];
@@ -1342,6 +1353,14 @@
       markFieldError('fld-m-ingresos', ingresos === ''); if(ingresos === '') ok = false;
       markFieldError('fld-m-miembros', !miembros); if(!miembros) ok = false;
 
+      const familiaCount = Math.min(parseInt(miembros, 10) || 0, 20);
+      for(let i = 2; i <= familiaCount; i++){
+        const rel = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
+        const fecha = document.getElementById(`m-familia-nacimiento-${i}`)?.value.trim() || '';
+        markFieldError(`fld-m-familia-relacion-${i}`, !rel); if(!rel) ok = false;
+        markFieldError(`fld-m-familia-nacimiento-${i}`, !isValidDateString(fecha)); if(!isValidDateString(fecha)) ok = false;
+      }
+
     } else if(flowType === 'vida'){
       const nombre = document.getElementById('v-nombre').value.trim();
       const apellido = document.getElementById('v-apellido').value.trim();
@@ -1458,13 +1477,22 @@
     }
     if(flowType === 'medico'){
       const idfiscal = document.querySelector('input[name="m-idfiscal"]:checked')?.value;
+      const miembrosVal = document.getElementById('m-miembros').value;
+      const familiaCount = Math.min(parseInt(miembrosVal, 10) || 0, 20);
+      const familiaLineas = [];
+      for(let i = 2; i <= familiaCount; i++){
+        const rel = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
+        const fechaTxt = document.getElementById(`m-familia-nacimiento-${i}`)?.value.trim() || '';
+        familiaLineas.push(`Persona ${i} (${rel || 'sin especificar'}) — nace ${toISODate(fechaTxt) || fechaTxt || 'sin especificar'}`);
+      }
       return {
         nombre_completo: [document.getElementById('m-nombre').value.trim(), document.getElementById('m-nombre2').value.trim(), document.getElementById('m-apellido').value.trim()].filter(Boolean).join(' '),
         fecha_nacimiento: toISODate(document.getElementById('m-nacimiento').value.trim()),
         estado_civil: CIVIL_LABELS[document.getElementById('m-civil').value] || '',
         tipo_id_fiscal: idfiscal === 'ssn' ? 'Social Security Number (SSN)' : (idfiscal === 'itin' ? 'ITIN' : ''),
         ingresos_mensuales_hogar: document.getElementById('m-ingresos').value,
-        miembros_hogar: document.getElementById('m-miembros').value
+        miembros_hogar: miembrosVal,
+        detalle_miembros_familia: familiaLineas.join('; ')
       };
     }
     if(flowType === 'vida'){
@@ -1511,6 +1539,7 @@
     // Médico
     nombre_completo: 'Nombre completo', estado_civil: 'Estado civil', tipo_id_fiscal: 'Identificación fiscal',
     ingresos_mensuales_hogar: 'Ingresos mensuales del hogar', miembros_hogar: 'Miembros del núcleo familiar',
+    detalle_miembros_familia: 'Detalle de los miembros del núcleo familiar',
     // Vida
     ssn_itin: 'SSN / ITIN', estatus_legal: 'Estatus legal', monto_cobertura: 'Monto de cobertura deseado',
     tipo_seguro: 'Tipo de seguro', termino_anios: 'Años del término', presupuesto_mensual: 'Presupuesto mensual'
@@ -1562,7 +1591,8 @@
     const payload = {
       principal: buildPrincipalPayload(),
       client_id: createdClientId || null,
-      quote_id: createdQuoteId || null
+      quote_id: createdQuoteId || null,
+      agent_slug: AGENT_SLUG
     };
 
     if(flowType === 'auto'){
@@ -1651,6 +1681,49 @@
     const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
     if(!m) return null;
     return `${m[3]}-${m[1]}-${m[2]}`;
+  }
+
+  // Cuando el cliente pone más de 1 miembro en el núcleo familiar (seguro
+  // médico), le pedimos la relación y fecha de nacimiento de cada miembro
+  // adicional (la Persona 1 es él/ella mismo(a), ya con sus datos arriba).
+  const FAMILIA_RELACION_OPTIONS = ['Esposo(a)', 'Hijo(a)', 'Padre', 'Madre', 'Otro'];
+  function renderFamiliaMiembrosRows(){
+    const n = Math.min(parseInt(document.getElementById('m-miembros').value, 10) || 0, 20);
+    const wrap = document.getElementById('m-familiaMiembrosWrap');
+    const rowsEl = document.getElementById('m-familiaMiembrosRows');
+    if(n <= 1){
+      wrap.style.display = 'none';
+      rowsEl.innerHTML = '';
+      return;
+    }
+    wrap.style.display = 'block';
+    let html = '';
+    for(let i = 2; i <= n; i++){
+      const relPrev = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
+      const fechaPrev = document.getElementById(`m-familia-nacimiento-${i}`)?.value || '';
+      html += `
+        <div class="form-row-2" style="margin-top:6px; padding-top:10px; border-top:1px solid var(--line);">
+          <div class="form-row" id="fld-m-familia-relacion-${i}">
+            <label>Persona ${i} — Relación contigo</label>
+            <select id="m-familia-relacion-${i}">
+              <option value="">Selecciona</option>
+              ${FAMILIA_RELACION_OPTIONS.map(o => `<option value="${o}" ${relPrev === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+            <div class="error-text">Selecciona una opción.</div>
+          </div>
+          <div class="form-row" id="fld-m-familia-nacimiento-${i}">
+            <label>Fecha de nacimiento</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="m-familia-nacimiento-${i}" placeholder="MM/DD/AAAA" maxlength="10" inputmode="numeric" oninput="maskDate(this)" value="${fechaPrev}" style="flex:1;">
+              <input type="date" id="m-familia-nacimiento-${i}-picker" onchange="onDatePickerChange(this)" style="width:0; height:0; padding:0; margin:0; border:none; opacity:0;">
+              <button type="button" class="btn-secondary" style="padding:0 16px; font-size:18px;" onclick="const p=this.previousElementSibling; p.showPicker ? p.showPicker() : p.click();" title="Elegir del calendario">📅</button>
+            </div>
+            <div class="error-text">Escribe una fecha válida (MM/DD/AAAA).</div>
+          </div>
+        </div>
+      `;
+    }
+    rowsEl.innerHTML = html;
   }
 
   renderStepsIndicator();
