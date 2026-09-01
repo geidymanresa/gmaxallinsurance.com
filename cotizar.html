@@ -610,16 +610,16 @@
             <div class="error-text">Escribe un monto.</div>
           </div>
           <div class="form-row" id="fld-m-miembros">
-            <label>¿Cuántos miembros conforman el núcleo familiar?
+            <label>Aparte de ti, ¿cuántas personas más viven en tu núcleo familiar?
               <button type="button" class="info-btn" onclick="toggleInfo('info-m-miembros')">?</button>
             </label>
-            <div class="info-box" id="info-m-miembros">Cuenta a tu cónyuge (si aplica) y a tus hijos dependientes que vivan contigo. Si eres tú solo(a), pon 1.</div>
-            <input type="number" min="1" id="m-miembros" style="margin-top:8px;" oninput="renderFamiliaMiembrosRows()">
-            <div class="error-text">Escribe un número.</div>
+            <div class="info-box" id="info-m-miembros">Cuenta a tu cónyuge (si aplica) y a tus hijos dependientes que vivan contigo. No te cuentes a ti mismo(a) — si vives solo(a), pon 0.</div>
+            <input type="number" min="0" id="m-miembros" style="margin-top:8px;" oninput="renderFamiliaMiembrosRows()">
+            <div class="error-text">Escribe un número (0 si vives solo(a)).</div>
           </div>
         </div>
         <div id="m-familiaMiembrosWrap" style="display:none; margin-top:10px;">
-          <p class="step-sub" style="margin:0 0 10px;">Persona 1 eres tú — ya está con tu información de arriba. Completa el resto de tu núcleo familiar:</p>
+          <p class="step-sub" style="margin:0 0 10px;">Cuéntanos sobre cada una de esas personas:</p>
           <div id="m-familiaMiembrosRows"></div>
         </div>
       </div>
@@ -1354,7 +1354,7 @@
       markFieldError('fld-m-miembros', !miembros); if(!miembros) ok = false;
 
       const familiaCount = Math.min(parseInt(miembros, 10) || 0, 20);
-      for(let i = 2; i <= familiaCount; i++){
+      for(let i = 1; i <= familiaCount; i++){
         const rel = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
         const fecha = document.getElementById(`m-familia-nacimiento-${i}`)?.value.trim() || '';
         markFieldError(`fld-m-familia-relacion-${i}`, !rel); if(!rel) ok = false;
@@ -1480,7 +1480,7 @@
       const miembrosVal = document.getElementById('m-miembros').value;
       const familiaCount = Math.min(parseInt(miembrosVal, 10) || 0, 20);
       const familiaLineas = [];
-      for(let i = 2; i <= familiaCount; i++){
+      for(let i = 1; i <= familiaCount; i++){
         const rel = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
         const fechaTxt = document.getElementById(`m-familia-nacimiento-${i}`)?.value.trim() || '';
         familiaLineas.push(`Persona ${i} (${rel || 'sin especificar'}) — nace ${toISODate(fechaTxt) || fechaTxt || 'sin especificar'}`);
@@ -1538,8 +1538,8 @@
     payroll_empleados: 'Payroll de empleados',
     // Médico
     nombre_completo: 'Nombre completo', estado_civil: 'Estado civil', tipo_id_fiscal: 'Identificación fiscal',
-    ingresos_mensuales_hogar: 'Ingresos mensuales del hogar', miembros_hogar: 'Miembros del núcleo familiar',
-    detalle_miembros_familia: 'Detalle de los miembros del núcleo familiar',
+    ingresos_mensuales_hogar: 'Ingresos mensuales del hogar', miembros_hogar: 'Personas adicionales en el núcleo familiar (aparte de él/ella)',
+    detalle_miembros_familia: 'Detalle de las personas adicionales del núcleo familiar',
     // Vida
     ssn_itin: 'SSN / ITIN', estatus_legal: 'Estatus legal', monto_cobertura: 'Monto de cobertura deseado',
     tipo_seguro: 'Tipo de seguro', termino_anios: 'Años del término', presupuesto_mensual: 'Presupuesto mensual'
@@ -1683,22 +1683,23 @@
     return `${m[3]}-${m[1]}-${m[2]}`;
   }
 
-  // Cuando el cliente pone más de 1 miembro en el núcleo familiar (seguro
-  // médico), le pedimos la relación y fecha de nacimiento de cada miembro
-  // adicional (la Persona 1 es él/ella mismo(a), ya con sus datos arriba).
+  // El campo "m-miembros" pregunta cuántas personas MÁS (aparte del que llena
+  // el formulario) viven en el núcleo familiar — así que si pone 3, se piden
+  // 3 tarjetas (Persona 1, 2 y 3), todas personas adicionales, ninguna es él
+  // mismo (sus datos ya están arriba, en la parte de arriba del formulario).
   const FAMILIA_RELACION_OPTIONS = ['Esposo(a)', 'Hijo(a)', 'Padre', 'Madre', 'Otro'];
   function renderFamiliaMiembrosRows(){
     const n = Math.min(parseInt(document.getElementById('m-miembros').value, 10) || 0, 20);
     const wrap = document.getElementById('m-familiaMiembrosWrap');
     const rowsEl = document.getElementById('m-familiaMiembrosRows');
-    if(n <= 1){
+    if(n <= 0){
       wrap.style.display = 'none';
       rowsEl.innerHTML = '';
       return;
     }
     wrap.style.display = 'block';
     let html = '';
-    for(let i = 2; i <= n; i++){
+    for(let i = 1; i <= n; i++){
       const relPrev = document.getElementById(`m-familia-relacion-${i}`)?.value || '';
       const fechaPrev = document.getElementById(`m-familia-nacimiento-${i}`)?.value || '';
       html += `
