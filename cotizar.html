@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotiza tu seguro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --blue:#1E4FA0;
@@ -741,15 +742,35 @@
 <script>
   document.querySelector('.call-bar a').href = 'tel:+18324800217';
 
-  const SUPABASE_FUNCTION_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co/functions/v1/submit-public-quote';
+  const SUPABASE_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co';
+  const SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/submit-public-quote';
   const SUPABASE_ANON_KEY = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Si esta cotización se abrió desde la página de un agente en específico
   // (ej: pagina-agente.html?a=roberta-ramirez -> link "Cotizar" -> cotizar.html?agente=roberta-ramirez),
   // mandamos ese slug en el payload para que este cliente le llegue exclusivamente a ese agente.
-  // OJO: esto todavía no hace nada del lado del servidor — falta actualizar la función
-  // submit-public-quote para que lea agent_slug y le asigne el cliente a ese agente.
   const AGENT_SLUG = new URLSearchParams(window.location.search).get('agente') || null;
+
+  // Si venimos de la página de un agente, la barra de "¿Prefieres hablar con
+  // un agente ahora?" debe mostrar el teléfono de ESE agente (el que puso en
+  // su perfil), no el número general de la agencia.
+  (async function setCallBarAgentPhone(){
+    if(!AGENT_SLUG) return;
+    try{
+      const { data: page } = await sb.from('agent_pages').select('agent_id').eq('slug', AGENT_SLUG).eq('published', true).maybeSingle();
+      if(!page) return;
+      const { data: profile } = await sb.from('profiles').select('phone').eq('id', page.agent_id).maybeSingle();
+      const phone = (profile?.phone || '').trim();
+      const digits = phone.replace(/[^0-9]/g, '');
+      if(digits.length < 10) return;
+      const e164 = digits.length === 10 ? '+1' + digits : '+' + digits;
+      const link = document.querySelector('.call-bar a');
+      if(link){ link.href = 'tel:' + e164; link.innerHTML = '<span class="phone-icon">📞</span> ' + phone; }
+    } catch(err){
+      console.error('call-bar agent phone:', err);
+    }
+  })();
 
   const AUTO_PRODUCTS = ['auto_personal', 'auto_comercial', 'motocicleta'];
   const RENTERS_PRODUCTS = ['renters'];
@@ -932,7 +953,7 @@
       const res = await fetch(SUPABASE_FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-        body: JSON.stringify({ principal: buildPrincipalPayload(), partial: true })
+        body: JSON.stringify({ principal: buildPrincipalPayload(), partial: true, agent_slug: AGENT_SLUG })
       });
       const data = await res.json();
       if(res.ok && !data.error){

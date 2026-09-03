@@ -27,9 +27,12 @@
   body{margin:0; font-family:var(--font-body); background:var(--canvas); color:var(--slate); -webkit-font-smoothing:antialiased;}
   a{color:inherit;}
   .ap-wrap{max-width:560px; margin:0 auto; padding:0 0 60px;}
-  .ap-hero{background:var(--navy); color:#fff; text-align:center; padding:44px 24px 60px; border-radius:0 0 28px 28px;}
-  .ap-photo{width:120px; height:120px; object-fit:cover; border-radius:var(--photo-radius); border:4px solid rgba(255,255,255,0.85); background:#fff; margin-bottom:16px;}
-  .ap-photo-fallback{width:120px; height:120px; border-radius:var(--photo-radius); border:4px solid rgba(255,255,255,0.85); background:rgba(255,255,255,0.15); margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:800; font-family:var(--font-heading);}
+  .ap-hero{background:var(--navy); color:#fff; text-align:center; padding:44px 24px 60px; border-radius:0 0 28px 28px; display:flex; flex-direction:column; align-items:center;}
+  .ap-photo{width:150px; height:150px; object-fit:cover; border-radius:var(--photo-radius); border:4px solid rgba(255,255,255,0.85); background:#fff; margin:0 auto 16px; flex-shrink:0;}
+  .ap-photo-fallback{width:150px; height:150px; border-radius:var(--photo-radius); border:4px solid rgba(255,255,255,0.85); background:rgba(255,255,255,0.15); margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:46px; font-weight:800; font-family:var(--font-heading); flex-shrink:0;}
+  @media (max-width:480px){
+    .ap-photo, .ap-photo-fallback{width:170px; height:170px;}
+  }
   .ap-name{font-family:var(--font-heading); font-weight:800; font-size:24px; margin:0 0 4px;}
   .ap-role{font-size:13.5px; letter-spacing:.04em; text-transform:uppercase; opacity:.85; margin:0;}
   .ap-bio{margin:16px auto 0; max-width:420px; font-size:14.5px; line-height:1.6; opacity:.92;}
@@ -87,6 +90,10 @@
     <a href="#" id="ap-btn-cotizar" class="ap-btn ap-btn-outline">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
       <span>Cotizar mi seguro</span>
+    </a>
+    <a href="#" id="ap-btn-email" class="ap-btn ap-btn-outline" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      <span>Escríbeme por correo</span>
     </a>
     <a href="#" id="ap-btn-calendly" class="ap-btn ap-btn-outline" style="display:none;" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -233,6 +240,16 @@
 
     document.getElementById('ap-btn-cotizar').href = `cotizar.html?agente=${encodeURIComponent(slug)}`;
 
+    // El correo que se muestra en la página es el que el agente escribió en
+    // "Mi página" (public_email); si lo dejó vacío, usamos el de su cuenta.
+    const publicEmail = (page.public_email || profile.email || '').trim();
+
+    if(publicEmail){
+      const btn = document.getElementById('ap-btn-email');
+      btn.href = `mailto:${publicEmail}`;
+      btn.style.display = 'flex';
+    }
+
     if(page.calendly_url){
       const btn = document.getElementById('ap-btn-calendly');
       btn.href = /^https?:\/\//i.test(page.calendly_url) ? page.calendly_url : 'https://' + page.calendly_url;
@@ -243,12 +260,20 @@
       'BEGIN:VCARD', 'VERSION:3.0',
       `FN:${name}`, 'ORG:GMAX All Insurance',
       profile.phone ? `TEL;TYPE=CELL:${profile.phone}` : '',
-      profile.email ? `EMAIL:${profile.email}` : '',
+      publicEmail ? `EMAIL:${publicEmail}` : '',
       `URL:${window.location.href}`,
       'END:VCARD'
     ].filter(Boolean).join('\n');
-    document.getElementById('ap-btn-vcard').href = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcard);
-    document.getElementById('ap-btn-vcard').setAttribute('download', name.replace(/\s+/g, '_') + '.vcf');
+    // Usamos un Blob (no un "data:" URI) para el link de descarga — en varios
+    // navegadores de teléfono (sobre todo iPhone) un data: URI con "download"
+    // no dispara nada al tocarlo, así que el botón "Regístrame contacto"
+    // parecía no funcionar. Con Blob + URL.createObjectURL sí funciona.
+    const vcardBlob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+    const vcardUrl = URL.createObjectURL(vcardBlob);
+    const vcardBtn = document.getElementById('ap-btn-vcard');
+    vcardBtn.href = vcardUrl;
+    vcardBtn.setAttribute('download', name.replace(/\s+/g, '_') + '.vcf');
+    vcardBtn.setAttribute('target', '_blank');
 
     if(licenses && licenses.length > 0){
       document.getElementById('ap-licenses-section').style.display = 'block';
