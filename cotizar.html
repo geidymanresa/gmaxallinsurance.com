@@ -165,8 +165,9 @@
         <label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(apto, suite — opcional)</span></label>
         <input type="text" id="p1-direccion2" placeholder="Apto, suite, etc.">
       </div>
-      <div class="form-row-2">
+      <div class="form-row-3">
         <div class="form-row" id="fld-ciudad"><label>Ciudad</label><input type="text" id="p1-ciudad"><div class="error-text">Escribe tu ciudad.</div></div>
+        <div class="form-row" id="fld-estado"><label>Estado</label><input type="text" id="p1-estado" value="Texas"><div class="error-text">Escribe tu estado.</div></div>
         <div class="form-row" id="fld-zip"><label>Código postal</label><input type="text" id="p1-zip" maxlength="10" placeholder="77521" oninput="onZipInput(this)"><div class="error-text">Escribe un código postal válido (5 dígitos).</div></div>
       </div>
       <div class="form-row-2">
@@ -325,11 +326,6 @@
       <!-- CASA (HOME) -->
       <div id="detalles-home" style="display:none;">
         <h3 style="font-size:17px; color:var(--navy); margin-bottom:12px;">Información del propietario</h3>
-        <div class="form-row-3">
-          <div class="form-row" id="fld-h-nombre"><label>Nombre</label><input type="text" id="h-nombre"><div class="error-text">Requerido.</div></div>
-          <div class="form-row"><label>Segundo nombre</label><input type="text" id="h-nombre2"></div>
-          <div class="form-row" id="fld-h-apellido"><label>Apellido(s)</label><input type="text" id="h-apellido"><div class="error-text">Requerido.</div></div>
-        </div>
         <div class="form-row" id="fld-h-nacimiento">
           <label>Fecha de nacimiento</label>
           <div style="display:flex; gap:8px;">
@@ -566,11 +562,6 @@
 
       <!-- SEGURO MÉDICO -->
       <div id="detalles-medico" style="display:none;">
-        <div class="form-row-3">
-          <div class="form-row" id="fld-m-nombre"><label>Nombre</label><input type="text" id="m-nombre"><div class="error-text">Requerido.</div></div>
-          <div class="form-row"><label>Segundo nombre</label><input type="text" id="m-nombre2"></div>
-          <div class="form-row" id="fld-m-apellido"><label>Apellido(s)</label><input type="text" id="m-apellido"><div class="error-text">Requerido.</div></div>
-        </div>
         <div class="form-row-2">
           <div class="form-row" id="fld-m-nacimiento">
             <label>Fecha de nacimiento</label>
@@ -627,11 +618,6 @@
 
       <!-- VIDA -->
       <div id="detalles-vida" style="display:none;">
-        <div class="form-row-3">
-          <div class="form-row" id="fld-v-nombre"><label>Nombre</label><input type="text" id="v-nombre"><div class="error-text">Requerido.</div></div>
-          <div class="form-row"><label>Segundo nombre</label><input type="text" id="v-nombre2"></div>
-          <div class="form-row" id="fld-v-apellido"><label>Apellido(s)</label><input type="text" id="v-apellido"><div class="error-text">Requerido.</div></div>
-        </div>
         <div class="form-row" id="fld-v-nacimiento">
           <label>Fecha de nacimiento</label>
           <div style="display:flex; gap:8px;">
@@ -893,9 +879,10 @@
     const calle = document.getElementById('p1-direccion').value.trim();
     const calle2 = document.getElementById('p1-direccion2').value.trim();
     const ciudad = document.getElementById('p1-ciudad').value.trim();
+    const estado = document.getElementById('p1-estado').value.trim();
     const zip = document.getElementById('p1-zip').value.trim();
     const partes = [calle, calle2].filter(Boolean).join(', ');
-    return `${partes}, ${ciudad}, TX ${zip}`.trim();
+    return `${partes}, ${ciudad}, ${estado} ${zip}`.trim();
   }
 
   function buildPrincipalPayload(){
@@ -911,11 +898,50 @@
     };
   }
 
+  // Link de HealthSherpa de la agencia (Geidy) — se usa cuando el cliente NO
+  // vino de la página de ningún agente en específico, o cuando el agente no
+  // tiene licencia Life and Health, o no puso su propio link todavía.
+  const DEFAULT_HEALTHSHERPA_URL = 'https://www.healthsherpa.com/?_agent_id=geidy-manresa-molerio';
+
+  async function resolveHealthSherpaLink(){
+    if(!AGENT_SLUG) return DEFAULT_HEALTHSHERPA_URL;
+    try{
+      const { data: page } = await sb.from('agent_pages').select('agent_id, healthsherpa_url').eq('slug', AGENT_SLUG).eq('published', true).maybeSingle();
+      if(!page || !page.healthsherpa_url) return DEFAULT_HEALTHSHERPA_URL;
+      const { data: profile } = await sb.from('profiles').select('license_lines').eq('id', page.agent_id).maybeSingle();
+      const lines = Array.isArray(profile?.license_lines) ? profile.license_lines : [];
+      return lines.includes('life_health') ? page.healthsherpa_url : DEFAULT_HEALTHSHERPA_URL;
+    } catch(err){
+      console.error('No se pudo resolver el link de HealthSherpa, usando el de la agencia:', err);
+      return DEFAULT_HEALTHSHERPA_URL;
+    }
+  }
+
+  async function handleMedicoRedirect(){
+    const continueBtn = document.getElementById('step1ContinueBtn');
+    if(continueBtn){ continueBtn.disabled = true; continueBtn.textContent = 'Redirigiendo...'; }
+    // Guardamos el lead en el CRM antes de mandarlo a HealthSherpa, para que
+    // quede registrado (y asignado al agente correcto) aunque la persona no
+    // vuelva nunca a este sitio.
+    try{
+      await fetch(SUPABASE_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({ principal: buildPrincipalPayload(), partial: true, agent_slug: AGENT_SLUG })
+      });
+    } catch(err){
+      console.error('No se pudo guardar el lead antes de mandarlo a HealthSherpa:', err);
+      // No bloqueamos al cliente por esto — igual lo mandamos a cotizar.
+    }
+    window.location.href = await resolveHealthSherpaLink();
+  }
+
   async function onStep1Continue(){
     const nombre = document.getElementById('p1-nombre').value.trim();
     const apellido = document.getElementById('p1-apellido').value.trim();
     const direccion = document.getElementById('p1-direccion').value.trim();
     const ciudad = document.getElementById('p1-ciudad').value.trim();
+    const estado = document.getElementById('p1-estado').value.trim();
     const zip = document.getElementById('p1-zip').value.trim();
     const telefono = document.getElementById('p1-telefono').value.trim();
     const telefonoDigitos = telefono.replace(/\D/g, '');
@@ -927,6 +953,7 @@
     markFieldError('fld-apellido', !apellido); if(!apellido) ok = false;
     markFieldError('fld-direccion', !direccion); if(!direccion) ok = false;
     markFieldError('fld-ciudad', !ciudad); if(!ciudad) ok = false;
+    markFieldError('fld-estado', !estado); if(!estado) ok = false;
     const zipValido = /^\d{5}$/.test(zip);
     markFieldError('fld-zip', !zipValido); if(!zipValido) ok = false;
     markFieldError('fld-telefono', telefonoDigitos.length !== 10); if(telefonoDigitos.length !== 10) ok = false;
@@ -938,6 +965,15 @@
 
     flowType = getFlowType(producto);
     isAutoFlow = flowType === 'auto';
+
+    if(flowType === 'medico'){
+      // El seguro médico no sigue el wizard interno — el cliente se manda
+      // directo a HealthSherpa (al del agente si tiene licencia Life and
+      // Health y puso su link, o si no, al de la agencia) para cotizar ahí
+      // mismo en el mercado de seguros.
+      await handleMedicoRedirect();
+      return;
+    }
 
     if(flowType === 'simple'){
       // No es un seguro con flujo especial: no hace falta el resto del wizard — se envía directo.
@@ -1282,8 +1318,6 @@
       markFieldError('fld-r-personas', !personas); if(!personas) ok = false;
 
     } else if(flowType === 'home'){
-      const nombre = document.getElementById('h-nombre').value.trim();
-      const apellido = document.getElementById('h-apellido').value.trim();
       const nacimiento = document.getElementById('h-nacimiento').value.trim();
       const direccion = document.getElementById('h-direccion').value.trim();
       const ciudad = document.getElementById('h-ciudad').value.trim();
@@ -1293,8 +1327,6 @@
       const bomberos = document.getElementById('h-bomberos').value;
       const hidrante = document.getElementById('h-hidrante').value;
       const deducible = document.getElementById('h-deducible').value;
-      markFieldError('fld-h-nombre', !nombre); if(!nombre) ok = false;
-      markFieldError('fld-h-apellido', !apellido); if(!apellido) ok = false;
       markFieldError('fld-h-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
       markFieldError('fld-h-direccion', !direccion); if(!direccion) ok = false;
       markFieldError('fld-h-ciudad', !ciudad); if(!ciudad) ok = false;
@@ -1359,15 +1391,11 @@
       }
 
     } else if(flowType === 'medico'){
-      const nombre = document.getElementById('m-nombre').value.trim();
-      const apellido = document.getElementById('m-apellido').value.trim();
       const nacimiento = document.getElementById('m-nacimiento').value.trim();
       const civil = document.getElementById('m-civil').value;
       const idfiscal = document.querySelector('input[name="m-idfiscal"]:checked');
       const ingresos = document.getElementById('m-ingresos').value;
       const miembros = document.getElementById('m-miembros').value;
-      markFieldError('fld-m-nombre', !nombre); if(!nombre) ok = false;
-      markFieldError('fld-m-apellido', !apellido); if(!apellido) ok = false;
       markFieldError('fld-m-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
       markFieldError('fld-m-civil', !civil); if(!civil) ok = false;
       markFieldError('fld-m-idfiscal', !idfiscal); if(!idfiscal) ok = false;
@@ -1383,16 +1411,12 @@
       }
 
     } else if(flowType === 'vida'){
-      const nombre = document.getElementById('v-nombre').value.trim();
-      const apellido = document.getElementById('v-apellido').value.trim();
       const nacimiento = document.getElementById('v-nacimiento').value.trim();
       const ssnitin = document.querySelector('input[name="v-ssnitin"]:checked');
       const estatus = document.querySelector('input[name="v-estatus"]:checked');
       const monto = document.getElementById('v-monto').value;
       const tipo = document.querySelector('input[name="v-tipo"]:checked');
       const presupuesto = document.getElementById('v-presupuesto').value;
-      markFieldError('fld-v-nombre', !nombre); if(!nombre) ok = false;
-      markFieldError('fld-v-apellido', !apellido); if(!apellido) ok = false;
       markFieldError('fld-v-nacimiento', !isValidDateString(nacimiento)); if(!isValidDateString(nacimiento)) ok = false;
       markFieldError('fld-v-ssnitin', !ssnitin); if(!ssnitin) ok = false;
       markFieldError('fld-v-estatus', !estatus); if(!estatus) ok = false;
@@ -1439,7 +1463,7 @@
         document.getElementById('h-direccion2').value.trim()
       ].filter(Boolean).join(', ') + `, ${document.getElementById('h-ciudad').value.trim()}, ${document.getElementById('h-estado').value.trim()} ${document.getElementById('h-zip').value.trim()}`;
       return {
-        nombre_propietario: [document.getElementById('h-nombre').value.trim(), document.getElementById('h-nombre2').value.trim(), document.getElementById('h-apellido').value.trim()].filter(Boolean).join(' '),
+        nombre_propietario: [document.getElementById('p1-nombre').value.trim(), document.getElementById('p1-nombre2').value.trim(), document.getElementById('p1-apellido').value.trim()].filter(Boolean).join(' '),
         fecha_nacimiento: toISODate(document.getElementById('h-nacimiento').value.trim()),
         direccion_propiedad: direccionCompleta,
         fecha_compra: toISODate(document.getElementById('h-fechacompra').value.trim()),
@@ -1507,7 +1531,7 @@
         familiaLineas.push(`Persona ${i} (${rel || 'sin especificar'}) — nace ${toISODate(fechaTxt) || fechaTxt || 'sin especificar'}`);
       }
       return {
-        nombre_completo: [document.getElementById('m-nombre').value.trim(), document.getElementById('m-nombre2').value.trim(), document.getElementById('m-apellido').value.trim()].filter(Boolean).join(' '),
+        nombre_completo: [document.getElementById('p1-nombre').value.trim(), document.getElementById('p1-nombre2').value.trim(), document.getElementById('p1-apellido').value.trim()].filter(Boolean).join(' '),
         fecha_nacimiento: toISODate(document.getElementById('m-nacimiento').value.trim()),
         estado_civil: CIVIL_LABELS[document.getElementById('m-civil').value] || '',
         tipo_id_fiscal: idfiscal === 'ssn' ? 'Social Security Number (SSN)' : (idfiscal === 'itin' ? 'ITIN' : ''),
@@ -1523,7 +1547,7 @@
       const estatus = document.querySelector('input[name="v-estatus"]:checked')?.value;
       const tipo = document.querySelector('input[name="v-tipo"]:checked')?.value;
       return {
-        nombre_completo: [document.getElementById('v-nombre').value.trim(), document.getElementById('v-nombre2').value.trim(), document.getElementById('v-apellido').value.trim()].filter(Boolean).join(' '),
+        nombre_completo: [document.getElementById('p1-nombre').value.trim(), document.getElementById('p1-nombre2').value.trim(), document.getElementById('p1-apellido').value.trim()].filter(Boolean).join(' '),
         fecha_nacimiento: toISODate(document.getElementById('v-nacimiento').value.trim()),
         ssn_itin: ssnitin === 'ssn' ? 'Seguro Social (SSN)' : (ssnitin === 'itin' ? 'ITIN' : (ssnitin === 'ninguno' ? 'Ninguno' : '')),
         estatus_legal: ESTATUS_LABELS[estatus] || '',
@@ -1570,7 +1594,11 @@
 
   function renderDetallesSummaryHTML(){
     const d = collectDetalles();
+    // nombre_propietario / nombre_completo son el mismo nombre del Paso 1 —
+    // van igual en el payload (por si el CRM los espera ahí), pero no hace
+    // falta mostrarlos otra vez en el resumen porque ya sale arriba.
     const rows = Object.keys(d)
+      .filter(k => k !== 'nombre_propietario' && k !== 'nombre_completo')
       .filter(k => d[k] !== '' && d[k] !== null && d[k] !== undefined)
       .map(k => {
         let val = d[k];
