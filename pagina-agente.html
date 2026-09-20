@@ -35,7 +35,7 @@
   }
   .ap-name{font-family:var(--font-heading); font-weight:800; font-size:24px; margin:0 0 4px;}
   .ap-role{font-size:13.5px; letter-spacing:.04em; text-transform:uppercase; opacity:.85; margin:0;}
-  .ap-bio{margin:16px auto 0; max-width:420px; font-size:14.5px; line-height:1.6; opacity:.92;}
+  .ap-bio{margin:0; font-size:14.5px; line-height:1.7; color:var(--slate); white-space:pre-line;}
   .ap-social{display:flex; justify-content:center; gap:12px; margin-top:18px; flex-wrap:wrap;}
   .ap-social a{width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; text-decoration:none;}
   .ap-social svg{width:18px; height:18px; fill:#fff;}
@@ -49,6 +49,12 @@
   .ap-license-card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;}
   .ap-license-card .st{font-weight:700; color:var(--navy);}
   .ap-license-card a{font-size:13px; font-weight:700; color:var(--navy); text-decoration:underline; white-space:nowrap;}
+  .ap-licenses-details{background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .ap-licenses-details summary{list-style:none; cursor:pointer; padding:16px 18px; font-family:var(--font-heading); font-weight:700; font-size:15.5px; color:var(--navy); display:flex; align-items:center; justify-content:space-between;}
+  .ap-licenses-details summary::-webkit-details-marker{display:none;}
+  .ap-licenses-details summary::after{content:'▾'; font-size:14px; color:var(--slate-light); transition:transform .2s;}
+  .ap-licenses-details[open] summary::after{transform:rotate(180deg);}
+  .ap-licenses-details > div{padding:0 18px 18px;}
   .ap-qr{text-align:center; padding:36px 20px 0;}
   .ap-qr img{width:150px; height:150px; border:1px solid var(--line); border-radius:10px; padding:8px; background:#fff;}
   .ap-qr p{font-size:12px; color:var(--slate-light); margin-top:8px;}
@@ -78,7 +84,6 @@
     <div id="ap-photo-fallback" class="ap-photo-fallback" style="display:none;"></div>
     <h1 class="ap-name" id="ap-name"></h1>
     <p class="ap-role">Agente de GMAX All Insurance</p>
-    <p class="ap-bio" id="ap-bio" style="display:none;"></p>
     <div class="ap-social" id="ap-social"></div>
   </div>
 
@@ -106,13 +111,20 @@
   </div>
 
   <div class="ap-section" id="ap-licenses-section" style="display:none;">
-    <h3>Mis licencias</h3>
-    <div id="ap-licenses-list"></div>
+    <details class="ap-licenses-details">
+      <summary>Ver mis licencias</summary>
+      <div id="ap-licenses-list"></div>
+    </details>
   </div>
 
   <div class="ap-qr">
     <img id="ap-qr-img" alt="Código QR de esta página">
     <p>Escanea para abrir esta página</p>
+  </div>
+
+  <div class="ap-section" id="ap-bio-section" style="display:none;">
+    <h3>Sobre mí</h3>
+    <p class="ap-bio" id="ap-bio"></p>
   </div>
 
   <footer class="ap-footer">
@@ -159,6 +171,56 @@
     const parts = String(isoDate).split('-');
     if(parts.length !== 3) return isoDate;
     return `${parts[1]}/${parts[2]}/${parts[0]}`;
+  }
+
+  // Arma el vCard del agente, con su foto de perfil incrustada dentro del
+  // mismo contacto (no como link) para que el teléfono la guarde junto con
+  // el nombre, sin depender de que el visitante tenga internet después.
+  async function buildAgentVcard(name, firstName, lastName, phone, email, photoUrl, pageUrl){
+    const vcardEscape = s => (s || '').toString().replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,');
+    const lines = [
+      'BEGIN:VCARD', 'VERSION:3.0',
+      `N:${vcardEscape(lastName)};${vcardEscape(firstName)};;;`,
+      `FN:${vcardEscape(name)}`,
+      'ORG:GMAX All Insurance',
+      'TITLE:Insurance Agent',
+      'X-ABShowAs:INDIVIDUAL'
+    ];
+    if(phone) lines.push(`TEL;TYPE=CELL:${phone}`);
+    if(email) lines.push(`EMAIL:${email}`);
+    lines.push(`URL:${pageUrl}`);
+
+    if(photoUrl){
+      try {
+        const resp = await fetch(photoUrl);
+        if(resp.ok){
+          const blob = await resp.blob();
+          const b64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          if(b64){
+            const type = blob.type.includes('png') ? 'PNG' : 'JPEG';
+            const prop = `PHOTO;ENCODING=b;TYPE=${type}:${b64}`;
+            // Plegado de línea cada 75 caracteres (RFC 2426) — las líneas de
+            // continuación empiezan con un espacio. Sin esto, algunas apps de
+            // contactos rechazan o truncan la foto por ser una sola línea muy larga.
+            const maxlen = 75;
+            lines.push(prop.slice(0, maxlen));
+            let rest = prop.slice(maxlen);
+            while(rest){
+              lines.push(' ' + rest.slice(0, maxlen - 1));
+              rest = rest.slice(maxlen - 1);
+            }
+          }
+        }
+      } catch(e){ console.error('vcard photo fetch:', e); }
+    }
+
+    lines.push('END:VCARD');
+    return lines.join('\r\n');
   }
 
   async function init(){
@@ -219,9 +281,8 @@
     }
 
     if(page.bio){
-      const bioEl = document.getElementById('ap-bio');
-      bioEl.textContent = page.bio;
-      bioEl.style.display = 'block';
+      document.getElementById('ap-bio').textContent = page.bio;
+      document.getElementById('ap-bio-section').style.display = 'block';
     }
 
     const socialEl = document.getElementById('ap-social');
@@ -256,24 +317,31 @@
       btn.style.display = 'flex';
     }
 
-    const vcard = [
-      'BEGIN:VCARD', 'VERSION:3.0',
-      `FN:${name}`, 'ORG:GMAX All Insurance',
-      profile.phone ? `TEL;TYPE=CELL:${profile.phone}` : '',
-      publicEmail ? `EMAIL:${publicEmail}` : '',
-      `URL:${window.location.href}`,
-      'END:VCARD'
-    ].filter(Boolean).join('\n');
-    // Usamos un Blob (no un "data:" URI) para el link de descarga — en varios
-    // navegadores de teléfono (sobre todo iPhone) un data: URI con "download"
-    // no dispara nada al tocarlo, así que el botón "Regístrame contacto"
-    // parecía no funcionar. Con Blob + URL.createObjectURL sí funciona.
-    const vcardBlob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
-    const vcardUrl = URL.createObjectURL(vcardBlob);
-    const vcardBtn = document.getElementById('ap-btn-vcard');
-    vcardBtn.href = vcardUrl;
-    vcardBtn.setAttribute('download', name.replace(/\s+/g, '_') + '.vcf');
-    vcardBtn.setAttribute('target', '_blank');
+    // El "N" (nombre estructurado) y X-ABShowAs:INDIVIDUAL son necesarios
+    // para que el teléfono (sobre todo iPhone) guarde esto como un contacto
+    // de PERSONA con el nombre del agente por delante — sin esto, algunos
+    // teléfonos ven que hay un ORG y guardan/muestran el contacto a nombre
+    // de "GMAX All Insurance" en vez del nombre del agente.
+    const nameParts = name.trim().split(/\s+/);
+    const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+    const firstName = nameParts.join(' ');
+    const agentPhotoUrl = page.photo_storage_path ? `${SUPABASE_URL}/storage/v1/object/public/agent-page-photos/${page.photo_storage_path}` : null;
+
+    // El armado del vCard (y sobre todo traer la foto para incrustarla) es
+    // asíncrono — se hace aparte, sin detener el resto de la página, y en
+    // cuanto está listo se conecta al botón "Regístrame contacto".
+    buildAgentVcard(name, firstName, lastName, profile.phone, publicEmail, agentPhotoUrl, window.location.href).then(vcard => {
+      // Usamos un Blob (no un "data:" URI) para el link de descarga — en varios
+      // navegadores de teléfono (sobre todo iPhone) un data: URI con "download"
+      // no dispara nada al tocarlo, así que el botón "Regístrame contacto"
+      // parecía no funcionar. Con Blob + URL.createObjectURL sí funciona.
+      const vcardBlob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+      const vcardUrl = URL.createObjectURL(vcardBlob);
+      const vcardBtn = document.getElementById('ap-btn-vcard');
+      vcardBtn.href = vcardUrl;
+      vcardBtn.setAttribute('download', name.replace(/\s+/g, '_') + '.vcf');
+      vcardBtn.setAttribute('target', '_blank');
+    }).catch(e => console.error('vcard build:', e));
 
     if(licenses && licenses.length > 0){
       document.getElementById('ap-licenses-section').style.display = 'block';
