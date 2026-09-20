@@ -1670,11 +1670,29 @@
         throw new Error(data.error || 'No se pudo enviar tu solicitud.');
       }
       showThankYou(producto);
+      notifyNewLead(payload);
     } catch(err){
       showTopError('Hubo un problema al enviar tu solicitud: ' + err.message + '. Puedes intentar de nuevo, o llamarnos directamente.');
       if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Enviar solicitud'; }
       if(flowType === 'simple'){ goToStep(1); }
     }
+  }
+
+  // Aviso por correo (Resend, vía la función notify-new-lead) a la
+  // administradora y, si el lead vino del link de un agente, también a ese
+  // agente. A propósito no se espera (await) ni se muestra ningún error de
+  // esto al cliente — si falla, el "gracias por cotizar" ya se mostró igual
+  // y su solicitud ya quedó guardada; esto es solo el aviso extra.
+  function notifyNewLead(payload){
+    fetch(SUPABASE_URL + '/functions/v1/notify-new-lead', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify(payload)
+    }).catch(err => console.error('notify-new-lead:', err));
   }
 
   function showThankYou(producto){
