@@ -196,6 +196,19 @@
         <textarea id="p1-comentarios" rows="3" placeholder="Cuéntanos cualquier detalle que nos ayude a cotizarte mejor"></textarea>
       </div>
 
+      <div class="form-row" id="fld-tyc" style="margin-top:6px; padding-top:16px; border-top:1px solid var(--line);">
+        <label style="display:flex; align-items:flex-start; gap:10px; font-weight:400; cursor:pointer;">
+          <input type="checkbox" id="p1-aceptaTyc" style="margin-top:3px; width:18px; height:18px; flex-shrink:0;">
+          <span style="font-size:13.5px; line-height:1.5; color:var(--slate);">
+            He leído y acepto los <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Términos y Condiciones</a>
+            y la <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Política de Privacidad</a> de GMAX All Insurance,
+            y autorizo que un agente con licencia se comunique conmigo por llamada, mensaje de texto o mensaje automatizado al número que escribí arriba para fines de cotización de seguros.
+            Entiendo que esta autorización no es requisito para recibir servicios y que puedo llamar directamente al (832) 480-0217 en su lugar.
+          </span>
+        </label>
+        <div class="error-text">Debes aceptar los Términos y Condiciones para continuar.</div>
+      </div>
+
       <div class="nav-buttons">
         <button type="button" class="btn-primary" id="step1ContinueBtn" onclick="onStep1Continue()">Continuar</button>
       </div>
@@ -960,6 +973,9 @@
     const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
     markFieldError('fld-correo', !correoValido); if(!correoValido) ok = false;
     markFieldError('fld-producto', !producto); if(!producto) ok = false;
+
+    const aceptaTyc = document.getElementById('p1-aceptaTyc').checked;
+    markFieldError('fld-tyc', !aceptaTyc); if(!aceptaTyc) ok = false;
 
     if(!ok){ showTopError('Completa los campos marcados en rojo antes de continuar.'); return; }
 
@@ -1796,6 +1812,39 @@
 
   renderStepsIndicator();
   populateDatalists();
+</script>
+
+
+<!-- ===== Aviso de cookies (GMAX All Insurance) ===== -->
+<div id="gmaxCookieBanner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:99999; background:#0B2D6E; color:#fff; padding:16px 18px; box-shadow:0 -8px 26px rgba(0,0,0,0.22); font-family:'Inter',Arial,sans-serif;">
+  <div style="max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; font-size:13.5px; line-height:1.55;">
+      🍪 Usamos cookies para que este sitio funcione bien y para entender cómo lo usas. Al hacer clic en "Aceptar" o seguir navegando, aceptas nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-cookies.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Cookies</a>,
+      nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Privacidad</a>
+      y nuestros
+      <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Términos y Condiciones</a>.
+    </div>
+    <div style="display:flex; gap:10px; flex-shrink:0;">
+      <button type="button" onclick="gmaxAcceptCookies()" style="background:#EFAF3E; color:#0B2D6E; font-weight:800; font-family:'Poppins',Arial,sans-serif; border:none; padding:11px 22px; border-radius:8px; cursor:pointer; font-size:13.5px;">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    try{
+      if(!localStorage.getItem('gmax_cookies_accepted')){
+        var _b = document.getElementById('gmaxCookieBanner');
+        if(_b) _b.style.display = 'block';
+      }
+    } catch(e){ /* localStorage bloqueado (modo privado) — no mostramos el banner para no romper la página */ }
+  })();
+  function gmaxAcceptCookies(){
+    try{ localStorage.setItem('gmax_cookies_accepted', '1'); } catch(e){}
+    var _b = document.getElementById('gmaxCookieBanner');
+    if(_b) _b.style.display = 'none';
+  }
 </script>
 
 </body>

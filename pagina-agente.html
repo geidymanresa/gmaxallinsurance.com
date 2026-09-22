@@ -112,7 +112,7 @@
   </div>
 
   <footer class="ap-footer">
-    <p>Términos y condiciones · Política de privacidad<br>
+    <p><a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener">Términos y condiciones</a> · <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener">Política de privacidad</a> · <a href="https://gmaxallinsurance.com/politica-de-cookies.html" target="_blank" rel="noopener">Política de cookies</a><br>
     La información que envíes por esta página se comparte únicamente con este agente y con GMAX All Insurance para darle seguimiento a tu solicitud.</p>
     <p><span id="ap-name-footer"></span> es <a href="https://gmaxallinsurance.com/" target="_blank" rel="noopener">Agente de GMAX All Insurance</a></p>
   </footer>
@@ -328,5 +328,38 @@
 
   init();
 </script>
+
+<!-- ===== Aviso de cookies (GMAX All Insurance) ===== -->
+<div id="gmaxCookieBanner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:99999; background:#0B2D6E; color:#fff; padding:16px 18px; box-shadow:0 -8px 26px rgba(0,0,0,0.22); font-family:'Inter',Arial,sans-serif;">
+  <div style="max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; font-size:13.5px; line-height:1.55;">
+      🍪 Usamos cookies para que este sitio funcione bien y para entender cómo lo usas. Al hacer clic en "Aceptar" o seguir navegando, aceptas nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-cookies.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Cookies</a>,
+      nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Privacidad</a>
+      y nuestros
+      <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Términos y Condiciones</a>.
+    </div>
+    <div style="display:flex; gap:10px; flex-shrink:0;">
+      <button type="button" onclick="gmaxAcceptCookies()" style="background:#EFAF3E; color:#0B2D6E; font-weight:800; font-family:'Poppins',Arial,sans-serif; border:none; padding:11px 22px; border-radius:8px; cursor:pointer; font-size:13.5px;">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    try{
+      if(!localStorage.getItem('gmax_cookies_accepted')){
+        var _b = document.getElementById('gmaxCookieBanner');
+        if(_b) _b.style.display = 'block';
+      }
+    } catch(e){ /* localStorage bloqueado (modo privado) — no mostramos el banner para no romper la página */ }
+  })();
+  function gmaxAcceptCookies(){
+    try{ localStorage.setItem('gmax_cookies_accepted', '1'); } catch(e){}
+    var _b = document.getElementById('gmaxCookieBanner');
+    if(_b) _b.style.display = 'none';
+  }
+</script>
+
 </body>
 </html>
