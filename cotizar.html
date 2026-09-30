@@ -22,7 +22,7 @@
   *{ box-sizing:border-box; }
   body{
     margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background:var(--canvas); color:var(--slate); padding-bottom:70px;
+    background:var(--canvas); color:var(--slate); padding-bottom:24px;
   }
   header{
     background:var(--navy); color:#fff; padding:20px 18px; text-align:center;
@@ -106,19 +106,33 @@
   }
   button:disabled{ opacity:0.6; cursor:not-allowed; }
 
-  .call-bar{
-    position:fixed; bottom:0; left:0; right:0; background:var(--navy); color:#fff; padding:16px 20px;
-    display:flex; justify-content:space-between; align-items:center; gap:14px; font-size:15.5px; font-weight:600; z-index:50;
-    box-shadow:0 -4px 14px rgba(0,0,0,0.15);
+  /* Burbuja opcional "Hablar con un agente" — en vez de una barra fija que
+     ocupa todo el ancho de abajo (como era antes), ahora es un botón chiquito
+     flotante en la esquina; el teléfono solo se ve si el usuario le da clic. */
+  .agent-bubble-btn{
+    position:fixed; bottom:18px; right:18px; z-index:60;
+    background:var(--navy); color:#fff; border:none; border-radius:30px; padding:12px 18px;
+    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700;
+    box-shadow:0 6px 18px rgba(11,45,110,0.35); cursor:pointer; font-family:inherit;
   }
-  .call-bar a{
-    background:var(--gold); color:var(--navy); font-weight:800; padding:13px 22px; border-radius:10px;
-    text-decoration:none; font-size:17px; white-space:nowrap; display:flex; align-items:center; gap:8px;
+  .agent-bubble-btn .bubble-icon{ font-size:17px; line-height:1; }
+  .agent-bubble-panel{
+    position:fixed; bottom:78px; right:18px; z-index:60; background:#fff; color:var(--slate);
+    border-radius:14px; box-shadow:0 12px 32px rgba(11,45,110,0.28); padding:18px 18px 16px; width:240px;
   }
-  .call-bar a .phone-icon{ font-size:18px; }
+  .agent-bubble-panel .bubble-close{
+    position:absolute; top:8px; right:10px; background:none; border:none; font-size:15px; line-height:1;
+    cursor:pointer; color:var(--slate-light); padding:4px;
+  }
+  .agent-bubble-panel .bubble-text{ margin:0 0 12px; font-size:13.5px; font-weight:600; color:var(--navy); padding-right:16px; }
+  .agent-bubble-panel a{
+    background:var(--gold); color:var(--navy); font-weight:800; border-radius:10px; padding:13px 14px;
+    text-decoration:none; font-size:16px; white-space:nowrap; display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+  }
   @media (max-width:480px){
-    .call-bar{ flex-direction:column; gap:8px; padding:14px 16px; text-align:center; }
-    .call-bar a{ width:100%; justify-content:center; }
+    .agent-bubble-btn .bubble-label{ display:none; }
+    .agent-bubble-btn{ padding:12px; }
+    .agent-bubble-panel{ right:14px; left:14px; width:auto; bottom:76px; }
   }
 
   .thankyou{ text-align:center; padding:30px 10px; }
@@ -733,13 +747,32 @@
   </div>
 </div>
 
-<div class="call-bar">
-  <span>¿Prefieres hablar con un agente ahora?</span>
-  <a href="tel:+18324800217"><span class="phone-icon">📞</span> (832) 480-0217</a>
+<button type="button" class="agent-bubble-btn" id="agentBubbleBtn" onclick="toggleAgentBubble(event)">
+  <span class="bubble-icon">💬</span> <span class="bubble-label">Hablar con un agente</span>
+</button>
+<div class="agent-bubble-panel" id="agentBubblePanel" style="display:none;" onclick="event.stopPropagation()">
+  <button type="button" class="bubble-close" onclick="toggleAgentBubble(event)" aria-label="Cerrar">✕</button>
+  <p class="bubble-text">¿Prefieres hablar con un agente ahora?</p>
+  <a href="tel:+18324800217" id="agentBubblePhoneLink"><span class="phone-icon">📞</span> <span id="agentBubblePhoneText">(832) 480-0217</span></a>
 </div>
 
 <script>
-  document.querySelector('.call-bar a').href = 'tel:+18324800217';
+  document.getElementById('agentBubblePhoneLink').href = 'tel:+18324800217';
+
+  let agentBubbleOpen = false;
+  function toggleAgentBubble(evt){
+    if(evt) evt.stopPropagation();
+    agentBubbleOpen = !agentBubbleOpen;
+    document.getElementById('agentBubblePanel').style.display = agentBubbleOpen ? 'block' : 'none';
+  }
+  document.addEventListener('click', function(e){
+    if(!agentBubbleOpen) return;
+    const panel = document.getElementById('agentBubblePanel');
+    const btn = document.getElementById('agentBubbleBtn');
+    if(panel.contains(e.target) || btn.contains(e.target)) return;
+    agentBubbleOpen = false;
+    panel.style.display = 'none';
+  });
 
   const SUPABASE_URL = 'https://gghsnbnnqkgcqriipgdz.supabase.co';
   const SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/submit-public-quote';
@@ -751,9 +784,9 @@
   // mandamos ese slug en el payload para que este cliente le llegue exclusivamente a ese agente.
   const AGENT_SLUG = new URLSearchParams(window.location.search).get('agente') || null;
 
-  // Si venimos de la página de un agente, la barra de "¿Prefieres hablar con
-  // un agente ahora?" debe mostrar el teléfono de ESE agente (el que puso en
-  // su perfil), no el número general de la agencia.
+  // Si venimos de la página de un agente, la burbuja de "¿Prefieres hablar
+  // con un agente ahora?" debe mostrar el teléfono de ESE agente (el que puso
+  // en su perfil), no el número general de la agencia.
   (async function setCallBarAgentPhone(){
     if(!AGENT_SLUG) return;
     try{
@@ -764,10 +797,12 @@
       const digits = phone.replace(/[^0-9]/g, '');
       if(digits.length < 10) return;
       const e164 = digits.length === 10 ? '+1' + digits : '+' + digits;
-      const link = document.querySelector('.call-bar a');
-      if(link){ link.href = 'tel:' + e164; link.innerHTML = '<span class="phone-icon">📞</span> ' + phone; }
+      const link = document.getElementById('agentBubblePhoneLink');
+      const text = document.getElementById('agentBubblePhoneText');
+      if(link) link.href = 'tel:' + e164;
+      if(text) text.textContent = phone;
     } catch(err){
-      console.error('call-bar agent phone:', err);
+      console.error('agent-bubble agent phone:', err);
     }
   })();
 
