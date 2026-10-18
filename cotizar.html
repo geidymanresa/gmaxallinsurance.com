@@ -110,29 +110,26 @@
      ocupa todo el ancho de abajo (como era antes), ahora es un botón chiquito
      flotante en la esquina; el teléfono solo se ve si el usuario le da clic. */
   .agent-bubble-btn{
-    position:fixed; bottom:18px; right:18px; z-index:60;
-    background:var(--navy); color:#fff; border:none; border-radius:30px; padding:12px 18px;
-    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700;
-    box-shadow:0 6px 18px rgba(11,45,110,0.35); cursor:pointer; font-family:inherit;
+    position:fixed; bottom:16px; right:16px; z-index:60;
+    width:44px; height:44px; padding:0; justify-content:center;
+    background:var(--navy); color:#fff; border:none; border-radius:50%;
+    display:flex; align-items:center; gap:0; font-size:13.5px; font-weight:700;
+    box-shadow:0 4px 12px rgba(11,45,110,0.3); cursor:pointer; font-family:inherit; opacity:0.92;
   }
-  .agent-bubble-btn .bubble-icon{ font-size:17px; line-height:1; }
+  .agent-bubble-btn .bubble-icon{ font-size:20px; line-height:1; }
+  .agent-bubble-btn .bubble-label{ display:none; }
   .agent-bubble-panel{
-    position:fixed; bottom:78px; right:18px; z-index:60; background:#fff; color:var(--slate);
-    border-radius:14px; box-shadow:0 12px 32px rgba(11,45,110,0.28); padding:18px 18px 16px; width:240px;
+    position:fixed; bottom:68px; right:16px; z-index:60; background:#fff; color:var(--slate);
+    border-radius:14px; box-shadow:0 10px 28px rgba(11,45,110,0.28); padding:14px 14px 12px; width:210px;
   }
   .agent-bubble-panel .bubble-close{
-    position:absolute; top:8px; right:10px; background:none; border:none; font-size:15px; line-height:1;
+    position:absolute; top:6px; right:8px; background:none; border:none; font-size:14px; line-height:1;
     cursor:pointer; color:var(--slate-light); padding:4px;
   }
-  .agent-bubble-panel .bubble-text{ margin:0 0 12px; font-size:13.5px; font-weight:600; color:var(--navy); padding-right:16px; }
+  .agent-bubble-panel .bubble-text{ margin:0 0 10px; font-size:13px; font-weight:600; color:var(--navy); padding-right:16px; }
   .agent-bubble-panel a{
-    background:var(--gold); color:var(--navy); font-weight:800; border-radius:10px; padding:13px 14px;
-    text-decoration:none; font-size:16px; white-space:nowrap; display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
-  }
-  @media (max-width:480px){
-    .agent-bubble-btn .bubble-label{ display:none; }
-    .agent-bubble-btn{ padding:12px; }
-    .agent-bubble-panel{ right:14px; left:14px; width:auto; bottom:76px; }
+    background:var(--gold); color:var(--navy); font-weight:800; border-radius:10px; padding:10px 12px;
+    text-decoration:none; font-size:15px; white-space:nowrap; display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
   }
 
   .thankyou{ text-align:center; padding:30px 10px; }
@@ -589,6 +586,11 @@
 
       <!-- SEGURO MÉDICO -->
       <div id="detalles-medico" style="display:none;">
+        <div style="background:#eef4ff; border:1.5px solid #c9d9f5; border-radius:12px; padding:14px 16px; margin-bottom:18px;">
+          <p style="margin:0 0 6px; font-weight:700; color:var(--navy); font-size:14.5px;">¿Quieres revisar tu elegibilidad por tu cuenta?</p>
+          <p style="margin:0 0 12px; font-size:13px; color:var(--slate-light); line-height:1.5;">Es opcional. Si prefieres, puedes revisar tu elegibilidad en el Mercado de Seguros (HealthSherpa). Si se te complica, no te preocupes: llena la información aquí abajo y nosotros la revisamos por ti.</p>
+          <a id="healthSherpaBtn" href="https://www.healthsherpa.com/?_agent_id=geidy-manresa-molerio" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:var(--navy); color:#fff; text-decoration:none; font-weight:700; font-size:13.5px; padding:11px 16px; border-radius:10px;">Revisar mi elegibilidad en el Mercado de Seguros ↗</a>
+        </div>
         <div class="form-row-2">
           <div class="form-row" id="fld-m-nacimiento">
             <label>Fecha de nacimiento</label>
@@ -747,8 +749,8 @@
   </div>
 </div>
 
-<button type="button" class="agent-bubble-btn" id="agentBubbleBtn" onclick="toggleAgentBubble(event)">
-  <span class="bubble-icon">💬</span> <span class="bubble-label">Hablar con un agente</span>
+<button type="button" class="agent-bubble-btn" id="agentBubbleBtn" onclick="toggleAgentBubble(event)" aria-label="Hablar con un agente" title="Hablar con un agente">
+  <span class="bubble-icon">📞</span>
 </button>
 <div class="agent-bubble-panel" id="agentBubblePanel" style="display:none;" onclick="event.stopPropagation()">
   <button type="button" class="bubble-close" onclick="toggleAgentBubble(event)" aria-label="Cerrar">✕</button>
@@ -904,6 +906,7 @@
     ['renters','home','eo','medico','vida'].forEach(f => {
       document.getElementById('detalles-' + f).style.display = (flowType === f) ? 'block' : 'none';
     });
+    if(flowType === 'medico') prepareHealthSherpaButton();
   }
 
   function showTopError(msg){
@@ -965,23 +968,18 @@
     }
   }
 
-  async function handleMedicoRedirect(){
-    const continueBtn = document.getElementById('step1ContinueBtn');
-    if(continueBtn){ continueBtn.disabled = true; continueBtn.textContent = 'Redirigiendo...'; }
-    // Guardamos el lead en el CRM antes de mandarlo a HealthSherpa, para que
-    // quede registrado (y asignado al agente correcto) aunque la persona no
-    // vuelva nunca a este sitio.
-    try{
-      await fetch(SUPABASE_FUNCTION_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-        body: JSON.stringify({ principal: buildPrincipalPayload(), partial: true, agent_slug: AGENT_SLUG })
-      });
-    } catch(err){
-      console.error('No se pudo guardar el lead antes de mandarlo a HealthSherpa:', err);
-      // No bloqueamos al cliente por esto — igual lo mandamos a cotizar.
-    }
-    window.location.href = await resolveHealthSherpaLink();
+  // El cliente de seguro médico llena el formulario normal de aquí (para que
+  // la agencia revise su información). Como alternativa OPCIONAL, en el paso de
+  // "Detalles" puede tocar un botón que abre HealthSherpa en otra pestaña (así
+  // no pierde lo que ya llenó) para revisar su elegibilidad en el mercado de
+  // seguros por su cuenta. Resolvemos el link con anticipación para que el clic
+  // abra la pestaña de inmediato (si se resolviera al hacer clic, el navegador
+  // podría bloquear la ventana nueva).
+  async function prepareHealthSherpaButton(){
+    const btn = document.getElementById('healthSherpaBtn');
+    if(!btn) return;
+    btn.href = DEFAULT_HEALTHSHERPA_URL;
+    try{ btn.href = await resolveHealthSherpaLink(); } catch(err){ console.error('HealthSherpa link:', err); }
   }
 
   async function onStep1Continue(){
@@ -1016,15 +1014,6 @@
 
     flowType = getFlowType(producto);
     isAutoFlow = flowType === 'auto';
-
-    if(flowType === 'medico'){
-      // El seguro médico no sigue el wizard interno — el cliente se manda
-      // directo a HealthSherpa (al del agente si tiene licencia Life and
-      // Health y puso su link, o si no, al de la agencia) para cotizar ahí
-      // mismo en el mercado de seguros.
-      await handleMedicoRedirect();
-      return;
-    }
 
     if(flowType === 'simple'){
       // No es un seguro con flujo especial: no hace falta el resto del wizard — se envía directo.
@@ -1881,6 +1870,33 @@
     if(_b) _b.style.display = 'none';
   }
 </script>
+
+<!-- ===== GMAX-SITE-START ===== -->
+<script>
+(function(){
+  /* Contador de visitas de GMAX All Insurance (sin IP, sin nombres: solo un código al azar por navegador). Se administra en el CRM → Página. */
+  var URL_ = 'https://gghsnbnnqkgcqriipgdz.supabase.co', KEY_ = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+  try{
+    var q = new URLSearchParams(location.search);
+    if(q.get('notrack') === '1'){ try{ localStorage.setItem('gmax_no_track', '1'); }catch(e){} alert('Listo: este navegador ya no cuenta como visita en las estadísticas.'); }
+    if(q.get('notrack') === '0'){ try{ localStorage.removeItem('gmax_no_track'); }catch(e){} alert('Este navegador vuelve a contar como visita.'); }
+    if(localStorage.getItem('gmax_no_track')) return;
+    var ua = navigator.userAgent || '';
+    if(navigator.webdriver || /bot|crawl|spider|slurp|preview|headless|lighthouse|pagespeed|facebookexternalhit|whatsapp|telegram|curl|wget/i.test(ua)) return;
+    if(location.protocol === 'file:' || /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname)) return;
+    function rid(){ var a = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(a); return Array.prototype.map.call(a, function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); }
+    var vid = null, isNew = false, sid = null;
+    try{ vid = localStorage.getItem('gmax_vid'); if(!vid){ vid = rid(); localStorage.setItem('gmax_vid', vid); isNew = true; } }catch(e){ vid = rid(); isNew = true; }
+    try{ sid = sessionStorage.getItem('gmax_sid'); if(!sid){ sid = rid(); sessionStorage.setItem('gmax_sid', sid); } }catch(e){ sid = rid(); }
+    var path = (location.pathname || '/').replace(/index\.html$/i, '') || '/'; if(path.length > 1) path = path.replace(/\/+$/, '') || '/';
+    var ref = ''; try{ if(document.referrer){ var h = new URL(document.referrer).hostname.replace(/^www\./, ''); if(h && h !== location.hostname.replace(/^www\./, '')) ref = h; } }catch(e){}
+    var w = Math.min(window.innerWidth || 1024, (screen && screen.width) || 9999), dev = /ipad|tablet/i.test(ua) || (w >= 600 && w < 1000 && /android|mobile/i.test(ua)) ? 'tablet' : (/mobi|iphone|android/i.test(ua) || w < 700 ? 'mobile' : 'desktop');
+    var body = JSON.stringify({ p_visitor: vid, p_session: sid, p_new: isNew, p_path: path, p_referrer: ref, p_utm_source: q.get('utm_source'), p_utm_medium: q.get('utm_medium'), p_utm_campaign: q.get('utm_campaign'), p_device: dev, p_lang: (navigator.language || '').slice(0, 12) });
+    fetch(URL_ + '/rest/v1/rpc/record_site_visit', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', apikey: KEY_, Authorization: 'Bearer ' + KEY_ }, body: body }).catch(function(){});
+  }catch(e){ /* nunca debe romper la página */ }
+})();
+</script>
+<!-- ===== GMAX-SITE-END ===== -->
 
 </body>
 </html>
