@@ -213,12 +213,21 @@
           <span style="font-size:13.5px; line-height:1.5; color:var(--slate);">
             He leído y acepto los <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Términos y Condiciones</a>
             y la <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Política de Privacidad</a> de GMAX All Insurance,
-            y autorizo que un agente con licencia se comunique conmigo por llamada, mensaje de texto o mensaje automatizado al número que escribí arriba para fines de cotización de seguros.
-            Entiendo que esta autorización no es requisito para recibir servicios y que puedo llamar directamente al (832) 480-0217 en su lugar.
+            y autorizo que un agente con licencia se comunique conmigo por llamada telefónica o correo electrónico para fines de cotización de seguros.
+            Entiendo que puedo llamar directamente al (832) 480-0217 en su lugar.
           </span>
         </label>
         <div class="error-text">Debes aceptar los Términos y Condiciones para continuar.</div>
       </div>
+
+      <!-- ===== SMS-CONSENT-START: casilla OPCIONAL (nunca bloquea el envío; no viene marcada) ===== -->
+      <div class="form-row" id="fld-sms" style="margin-top:4px;">
+        <label style="display:flex; align-items:flex-start; gap:10px; font-weight:400; cursor:pointer; background:#F5F8FF; border:1px solid var(--line); border-radius:10px; padding:12px 14px;">
+          <input type="checkbox" id="p1-aceptaSms" style="margin-top:3px; width:18px; height:18px; flex-shrink:0;">
+          <span id="p1-sms-text" style="font-size:13px; line-height:1.5; color:var(--slate);">Sí, quiero recibir mensajes de texto de GMAX All Insurance (seguimiento de mi cotización y recordatorios de mi póliza y pagos) al número que escribí arriba. Hasta 8 mensajes al mes. Pueden aplicar tarifas de mensajes y datos. Responde STOP para cancelar o AYUDA para ayuda. Es opcional y no es condición para comprar ni para recibir servicios. No compartimos tu número de celular con terceros para fines de mercadeo. Ver <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html#s8" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Términos</a> y <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:var(--blue); text-decoration:underline;">Política de Privacidad</a>.</span>
+        </label>
+      </div>
+      <!-- ===== SMS-CONSENT-END ===== -->
 
       <div class="nav-buttons">
         <button type="button" class="btn-primary" id="step1ContinueBtn" onclick="onStep1Continue()">Continuar</button>
@@ -923,6 +932,33 @@
   }
 
   // ---------- Paso 1 ----------
+  // ===== SMS-CONSENT-JS-START =====
+  // Guarda la prueba del permiso (texto exacto, versión, fecha, página) en Supabase vía record_web_sms_consent().
+  // Nunca bloquea ni muestra errores al cliente: si falla, la cotización ya quedó guardada igual.
+  const SMS_CONSENT_VERSION = 'sms-2026-10-v1';
+  let smsConsentRecorded = false;
+  function smsChecked(){ const b = document.getElementById('p1-aceptaSms'); return !!(b && b.checked); }
+  async function recordSmsConsent(clientId, quoteId){
+    try{
+      const checked = smsChecked();
+      if(!clientId) return;
+      if(!checked && !smsConsentRecorded) return;      // nunca marcó nada: no hay nada que registrar
+      if(checked && smsConsentRecorded) return;        // ya quedó registrado en el paso anterior
+      const textEl = document.getElementById('p1-sms-text');
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/record_web_sms_consent', {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({
+          p_client: clientId, p_quote: quoteId || null, p_phone: document.getElementById('p1-telefono').value.trim(), p_checked: checked,
+          p_text: (textEl ? textEl.textContent : '').replace(/\s+/g, ' ').trim().slice(0, 2000), p_version: SMS_CONSENT_VERSION,
+          p_page: (location.origin + location.pathname + (AGENT_SLUG ? '?agente=' + AGENT_SLUG : '')).slice(0, 300), p_ua: (navigator.userAgent || '').slice(0, 300)
+        })
+      });
+      if(res.ok) smsConsentRecorded = checked;
+    } catch(err){ console.error('record_web_sms_consent:', err); }
+  }
+  // ===== SMS-CONSENT-JS-END =====
+
   let createdClientId = null;
   let createdQuoteId = null;
 
@@ -1035,6 +1071,7 @@
       if(res.ok && !data.error){
         createdClientId = data.client_id;
         createdQuoteId = data.quote_id;
+        recordSmsConsent(createdClientId, createdQuoteId);
       }
     } catch(err){
       // Si falla aquí, no pasa nada grave: el envío final (Paso 5) va a crear
@@ -1709,6 +1746,7 @@
       if(!res.ok || data.error){
         throw new Error(data.error || 'No se pudo enviar tu solicitud.');
       }
+      await recordSmsConsent(data.client_id || createdClientId, data.quote_id || createdQuoteId);
       showThankYou(producto);
       notifyNewLead(payload);
     } catch(err){
@@ -1740,8 +1778,8 @@
     document.getElementById('thankyouStep').classList.add('active');
     document.getElementById('stepsIndicator').innerHTML = '';
     const text = flowType !== 'simple'
-      ? 'Un agente se pondrá en contacto contigo muy pronto — ya está comenzando a trabajar en tu cotización. Te estaremos escribiendo por mensaje de texto o llamada.'
-      : `Gracias por querer cotizar con nosotros tu seguro de ${(PRODUCT_LABELS[producto] || producto).toLowerCase()}. Un agente se pondrá en contacto contigo por mensaje de texto o llamada.`;
+      ? 'Un agente se pondrá en contacto contigo muy pronto — ya está comenzando a trabajar en tu cotización. ' + (smsChecked() ? 'Te estaremos escribiendo por mensaje de texto o llamada.' : 'Te estaremos contactando por llamada o correo electrónico.')
+      : `Gracias por querer cotizar con nosotros tu seguro de ${(PRODUCT_LABELS[producto] || producto).toLowerCase()}. Un agente se pondrá en contacto contigo ${smsChecked() ? 'por mensaje de texto o llamada' : 'por llamada o correo electrónico'}.`;
     document.getElementById('thankyouText').textContent = text;
   }
 
