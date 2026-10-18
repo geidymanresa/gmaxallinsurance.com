@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Confirma tus mensajes de texto — GMAX All Insurance</title>
+<style>
+  :root{ --blue:#1E4FA0; --navy:#0B2D6E; --gold:#EFAF3E; --gold-deep:#D69428; --canvas:#F6F7FB; --slate:#33415C; --slate-light:#8B93A7; --line:#E7EAF2; --danger:#D14343; --success:#1E9E6B; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background:var(--canvas); color:var(--slate); padding-bottom:90px; }
+  header{ background:var(--navy); color:#fff; padding:20px 18px; text-align:center; }
+  header h1{ margin:0; font-size:20px; font-weight:700; }
+  header p{ margin:6px 0 0; font-size:13.5px; color:#C7D5EE; }
+  .wrap{ max-width:560px; margin:0 auto; padding:18px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:0 2px 10px rgba(11,45,110,0.05); }
+  h2{ font-size:19px; margin:0 0 8px; color:var(--navy); }
+  p{ line-height:1.55; font-size:15px; margin:0 0 14px; }
+  .consent{ display:flex; align-items:flex-start; gap:10px; cursor:pointer; background:#F5F8FF; border:1px solid var(--line); border-radius:10px; padding:14px; margin:16px 0; }
+  .consent input{ margin-top:3px; width:20px; height:20px; flex-shrink:0; }
+  .consent span{ font-size:13.5px; line-height:1.55; color:var(--slate); }
+  .consent a, .small a{ color:var(--blue); text-decoration:underline; }
+  .small{ font-size:12.5px; color:var(--slate-light); }
+  button.btn-primary{ width:100%; background:var(--gold); color:var(--navy); font-weight:800; border:none; padding:14px 18px; border-radius:10px; font-size:16px; cursor:pointer; }
+  button.btn-primary:hover:not(:disabled){ background:var(--gold-deep); }
+  button.btn-primary:disabled{ opacity:.45; cursor:not-allowed; }
+  .ok-icon{ width:56px; height:56px; border-radius:50%; background:var(--success); color:#fff; display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 14px; }
+  .center{ text-align:center; }
+  .err{ color:var(--danger); font-size:14px; margin-top:10px; min-height:18px; }
+  .view{ display:none; } .view.on{ display:block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>GMAX All Insurance</h1>
+  <p>Confirma si quieres recibir mensajes de texto</p>
+</header>
+<div class="wrap">
+  <div class="card">
+    <div id="v-loading" class="view on center"><p>Cargando…</p></div>
+
+    <div id="v-form" class="view">
+      <h2 id="hello">Hola</h2>
+      <p>Tu agente de GMAX All Insurance te pidió confirmar que quieres recibir mensajes de texto en el número que termina en <strong id="last4">••••</strong>. Es completamente opcional.</p>
+      <label class="consent" for="agree">
+        <input type="checkbox" id="agree">
+        <span id="consent-text">Sí, quiero recibir mensajes de texto de GMAX All Insurance (seguimiento de mi cotización y recordatorios de mi póliza y pagos) al número que termina en <b class="l4">••••</b>. Hasta 8 mensajes al mes. Pueden aplicar tarifas de mensajes y datos. Responde STOP para cancelar o AYUDA para ayuda. Es opcional y no es condición para comprar ni para recibir servicios. No compartimos tu número de celular con terceros para fines de mercadeo. Ver <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html#s8" target="_blank" rel="noopener">Términos</a> y <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>.</span>
+      </label>
+      <button type="button" class="btn-primary" id="confirmBtn" disabled>Confirmar</button>
+      <div class="err" id="err"></div>
+      <p class="small" style="margin-top:14px;">Si no quieres recibir textos, simplemente cierra esta página: no pasa nada y seguimos atendiéndote por llamada o WhatsApp.</p>
+    </div>
+
+    <div id="v-done" class="view center">
+      <div class="ok-icon">✓</div>
+      <h2>¡Listo, quedaste registrado!</h2>
+      <p>Te escribiremos por mensaje de texto solo sobre tu cotización y tu póliza. Puedes responder <strong>STOP</strong> en cualquier momento para dejar de recibirlos, o <strong>AYUDA</strong> si necesitas ayuda.</p>
+    </div>
+
+    <div id="v-already" class="view center">
+      <div class="ok-icon">✓</div>
+      <h2 id="already-title">Este enlace ya fue usado</h2>
+      <p>Ya quedaste registrado. Si quieres dejar de recibir textos, responde <strong>STOP</strong> a cualquiera de nuestros mensajes.</p>
+    </div>
+
+    <div id="v-bad" class="view center">
+      <h2 id="bad-title">Este enlace no es válido</h2>
+      <p id="bad-text">Pídele a tu agente que te envíe uno nuevo, o llámanos al <a href="tel:+18324800217" style="color:var(--blue)">(832) 480-0217</a>.</p>
+    </div>
+  </div>
+  <p class="small center" style="margin-top:16px;">GMAX All Insurance · Houston, Texas · <a href="tel:+18324800217">(832) 480-0217</a> · info@gmaxallinsurance.com</p>
+</div>
+<script>
+(function(){
+  var URL_ = 'https://gghsnbnnqkgcqriipgdz.supabase.co', KEY_ = 'sb_publishable_phuifGp9qibdkiEoG3V-FA_6TmtFJCC';
+  var VERSION = 'sms-2026-10-v1-link';
+  var token = new URLSearchParams(location.search).get('t') || '';
+  function show(id){ ['v-loading','v-form','v-done','v-already','v-bad'].forEach(function(v){ document.getElementById(v).classList.toggle('on', v === id); }); }
+  function rpc(name, body){
+    return fetch(URL_ + '/rest/v1/rpc/' + name, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY_, Authorization: 'Bearer ' + KEY_ }, body: JSON.stringify(body) })
+      .then(function(r){ if(!r.ok) throw new Error('http ' + r.status); return r.json(); });
+  }
+  function bad(reason){
+    if(reason === 'vencido'){ document.getElementById('bad-title').textContent = 'Este enlace venció'; }
+    show('v-bad');
+  }
+  if(!/^[0-9a-f]{64}$/.test(token)){ bad('invalido'); return; }
+  rpc('get_sms_consent_link', { p_token: token }).then(function(d){
+    if(d && d.ok){
+      document.getElementById('hello').textContent = d.first_name ? 'Hola, ' + d.first_name : 'Hola';
+      document.getElementById('last4').textContent = '••' + d.phone_last4;
+      Array.prototype.forEach.call(document.querySelectorAll('.l4'), function(e){ e.textContent = '••' + d.phone_last4; });
+      show('v-form');
+    } else if(d && d.reason === 'usado'){ show('v-already'); }
+    else bad(d && d.reason);
+  }).catch(function(){
+    document.getElementById('bad-title').textContent = 'No pudimos cargar la página';
+    document.getElementById('bad-text').textContent = 'Revisa tu conexión e intenta de nuevo en unos minutos, o llámanos al (832) 480-0217.';
+    show('v-bad');
+  });
+  var agree = document.getElementById('agree'), btn = document.getElementById('confirmBtn');
+  agree.addEventListener('change', function(){ btn.disabled = !agree.checked; });
+  btn.addEventListener('click', function(){
+    if(!agree.checked) return;
+    btn.disabled = true; btn.textContent = 'Guardando…'; document.getElementById('err').textContent = '';
+    rpc('confirm_sms_consent_link', {
+      p_token: token, p_text: document.getElementById('consent-text').textContent.replace(/\s+/g, ' ').trim().slice(0, 2000), p_version: VERSION,
+      p_page: (location.origin + location.pathname).slice(0, 300), p_ua: (navigator.userAgent || '').slice(0, 300)
+    }).then(function(d){
+      if(d && d.ok){ show(d.result === 'ya_confirmado' ? 'v-already' : 'v-done'); }
+      else { bad(d && d.reason); }
+    }).catch(function(){
+      document.getElementById('err').textContent = 'No se pudo guardar. Intenta de nuevo o llámanos al (832) 480-0217.';
+      btn.disabled = false; btn.textContent = 'Confirmar';
+    });
+  });
+})();
+</script>
+<!-- ===== Aviso de cookies (GMAX All Insurance) ===== -->
+<div id="gmaxCookieBanner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:99999; background:#0B2D6E; color:#fff; padding:16px 18px; box-shadow:0 -8px 26px rgba(0,0,0,0.22); font-family:'Inter',Arial,sans-serif;">
+  <div style="max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; font-size:13.5px; line-height:1.55;">
+      🍪 Usamos cookies para que este sitio funcione bien y para entender cómo lo usas. Al hacer clic en "Aceptar" o seguir navegando, aceptas nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-cookies.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Cookies</a>,
+      nuestra
+      <a href="https://gmaxallinsurance.com/politica-de-privacidad.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Política de Privacidad</a>
+      y nuestros
+      <a href="https://gmaxallinsurance.com/terminos-y-condiciones.html" target="_blank" rel="noopener" style="color:#EFAF3E; text-decoration:underline;">Términos y Condiciones</a>.
+    </div>
+    <div style="display:flex; gap:10px; flex-shrink:0;">
+      <button type="button" onclick="gmaxAcceptCookies()" style="background:#EFAF3E; color:#0B2D6E; font-weight:800; font-family:'Poppins',Arial,sans-serif; border:none; padding:11px 22px; border-radius:8px; cursor:pointer; font-size:13.5px;">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    try{
+      if(!localStorage.getItem('gmax_cookies_accepted')){
+        var _b = document.getElementById('gmaxCookieBanner');
+        if(_b) _b.style.display = 'block';
+      }
+    } catch(e){ /* localStorage bloqueado (modo privado) — no mostramos el banner para no romper la página */ }
+  })();
+  function gmaxAcceptCookies(){
+    try{ localStorage.setItem('gmax_cookies_accepted', '1'); } catch(e){}
+    var _b = document.getElementById('gmaxCookieBanner');
+    if(_b) _b.style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
