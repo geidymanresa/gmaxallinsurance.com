@@ -44,6 +44,8 @@
   .steps-indicator .dot.done{ background:var(--success); border-color:var(--success); color:#fff; }
   .steps-indicator .label{ font-size:10.5px; color:var(--slate-light); line-height:1.2; }
   .steps-indicator .label.active{ color:var(--blue); font-weight:700; }
+  .steps-indicator.many{ gap:2px; }
+  .steps-indicator.many .label{ font-size:9.5px; }
 
   .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px 20px; box-shadow:0 2px 10px rgba(11,45,110,0.05); }
   .step{ display:none; }
@@ -198,6 +200,7 @@
           <option value="renters">Inquilinos</option>
           <option value="errores_omisiones">Errores y Omisiones (E&amp;O)</option>
           <option value="comercial_negocios">Seguro comercial para negocios</option>
+          <option value="workers_comp">Worker Compensation (compensación para trabajadores)</option>
           <option value="otro">Otro</option>
         </select>
         <div class="error-text">Selecciona qué seguro necesitas.</div>
@@ -733,6 +736,121 @@
       </div>
     </section>
 
+    <!-- ===== WC-HTML-START: Worker Compensation (varios pasos, uno por pantalla) ===== -->
+    <section class="step" data-step="wc1">
+      <h2>Cuéntanos de tu negocio</h2>
+      <p class="step-sub">Para cotizar tu Worker Compensation necesitamos conocer tu compañía. Son pocas preguntas, una pantalla a la vez.</p>
+      <div class="form-row" id="fld-wc-nombre"><label>Nombre de la compañía</label><input type="text" id="wc-nombre" maxlength="120" autocomplete="organization"><div class="error-text">Escribe el nombre de la compañía.</div></div>
+      <div class="form-row"><label>Doing Business As (DBA) <span style="font-weight:400; color:var(--slate-light);">(si tiene un nombre comercial distinto — opcional)</span></label><input type="text" id="wc-dba" maxlength="120"></div>
+      <div class="form-row" id="fld-wc-tipo"><label>¿Qué tipo de negocio es?</label><input type="text" id="wc-tipo" maxlength="120" placeholder="Ej. construcción, restaurante, limpieza"><div class="error-text">Cuéntanos qué tipo de negocio es.</div></div>
+      <div class="form-row" id="fld-wc-trabajo"><label>¿Cuál es el tipo de trabajo principal que realizan?</label><textarea id="wc-trabajo" rows="3" maxlength="300" placeholder="Ej. instalación de techos, cocina y servicio de mesas, limpieza de oficinas…"></textarea><div class="error-text">Describe el trabajo principal que realizan.</div></div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(1)">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wc1')">Continuar</button>
+      </div>
+    </section>
+
+    <section class="step" data-step="wc2">
+      <h2>¿Dónde está la compañía?</h2>
+      <p class="step-sub">La ubicación y los datos de contacto de la compañía.</p>
+      <div class="form-row"><button type="button" class="btn-secondary" style="padding:8px 14px; font-size:13px;" onclick="wcUseStep1()">Usar los datos que escribí en el primer paso</button></div>
+      <div class="form-row" id="fld-wc-direccion"><label>Dirección de la compañía</label><input type="text" id="wc-direccion" maxlength="120" placeholder="Calle y número" autocomplete="off"><div class="error-text">Escribe la dirección.</div></div>
+      <div class="form-row"><label>Dirección 2 <span style="font-weight:400; color:var(--slate-light);">(suite, oficina — opcional)</span></label><input type="text" id="wc-direccion2" maxlength="60" autocomplete="off"></div>
+      <div class="form-row-3">
+        <div class="form-row" id="fld-wc-ciudad"><label>Ciudad</label><input type="text" id="wc-ciudad" maxlength="60" autocomplete="off"><div class="error-text">Requerido.</div></div>
+        <div class="form-row" id="fld-wc-estado"><label>Estado</label><input type="text" id="wc-estado" maxlength="40" value="Texas" autocomplete="off"><div class="error-text">Requerido.</div></div>
+        <div class="form-row" id="fld-wc-zip"><label>Código postal</label><input type="text" id="wc-zip" maxlength="5" inputmode="numeric" oninput="onZipInput(this)" autocomplete="off"><div class="error-text">5 dígitos.</div></div>
+      </div>
+      <div class="form-row" id="fld-wc-casa">
+        <label>¿La compañía tiene su ubicación en una oficina en casa?</label>
+        <div class="radio-group">
+          <label class="radio-pill"><input type="radio" name="wc-casa" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="wc-casa" value="no"> No</label>
+        </div>
+        <div class="error-text">Elige una opción.</div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" id="fld-wc-telefono"><label>Teléfono de la compañía</label><input type="tel" id="wc-telefono" placeholder="(555) 555-5555" maxlength="14" oninput="maskPhone(this)" autocomplete="off"><div class="error-text">El teléfono debe tener 10 dígitos.</div></div>
+        <div class="form-row" id="fld-wc-correo"><label>Correo de la compañía</label><input type="email" id="wc-correo" maxlength="120" placeholder="compania@correo.com" autocomplete="off"><div class="error-text">Escribe un correo válido.</div></div>
+      </div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep('wc1')">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wc2')">Continuar</button>
+      </div>
+    </section>
+
+    <section class="step" data-step="wc3">
+      <h2>Propietarios y empleados</h2>
+      <p class="step-sub">Con esto calculamos el costo de tu póliza.</p>
+      <div class="form-row-2">
+        <div class="form-row" id="fld-wc-propietarios"><label>¿Cuántos propietarios tiene la compañía?</label><input type="text" id="wc-propietarios" inputmode="numeric" maxlength="4" oninput="wcInt(this)" autocomplete="off"><div class="error-text">Escribe cuántos propietarios (de 1 a 10).</div></div>
+        <div class="form-row" id="fld-wc-empleados"><label>¿Cuántos empleados trabajan en la compañía? <span style="font-weight:400; color:var(--slate-light);">(puede ser 0)</span></label><input type="text" id="wc-empleados" inputmode="numeric" maxlength="5" oninput="wcInt(this)" autocomplete="off"><div class="error-text">Escribe un número (puede ser 0).</div></div>
+      </div>
+      <div class="form-row" id="fld-wc-nomina"><label>Nómina esperada para los próximos 12 meses ($)</label><input type="text" id="wc-nomina" inputmode="decimal" maxlength="14" oninput="wcMoney(this)" autocomplete="off"><div style="font-size:12.5px; color:var(--slate-light); margin-top:5px;">Cuánto piensas pagarle en total a todos tus empleados en el año. Si no tienes empleados, escribe 0.</div><div class="error-text">Escribe un monto (puede ser 0).</div></div>
+      <div class="form-row" id="fld-wc-ingresos"><label>Ingresos esperados para los próximos 12 meses de la compañía ($)</label><input type="text" id="wc-ingresos" inputmode="decimal" maxlength="14" oninput="wcMoney(this)" autocomplete="off"><div class="error-text">Escribe un monto.</div></div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep('wc2')">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wc3')">Continuar</button>
+      </div>
+    </section>
+
+    <section class="step" data-step="wco">
+      <h2>Propietarios de la compañía</h2>
+      <p class="step-sub">Como la compañía tiene más de un propietario, necesitamos el porcentaje de cada uno y los datos de contacto de los demás. Los porcentajes deben sumar 100%.</p>
+      <div id="wco-list"></div>
+      <div class="form-row" id="fld-wco-total"><div id="wco-total" style="font-size:14px; font-weight:700; color:var(--slate);"></div><div class="error-text">Los porcentajes deben sumar exactamente 100%.</div></div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep('wc3')">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wco')">Continuar</button>
+      </div>
+    </section>
+
+    <section class="step" data-step="wc4">
+      <h2>Personal fuera de Texas y subcontratistas</h2>
+      <p class="step-sub">Un subcontratista es toda persona que no figura como empleado y a la que se le paga con forma 1099.</p>
+      <div class="form-row" id="fld-wc-fuera">
+        <label>¿Tiene contratada a alguna persona que trabaje fuera de Texas?</label>
+        <div class="radio-group">
+          <label class="radio-pill"><input type="radio" name="wc-fuera" value="si" onchange="toggleField('fld-wc-fuera-estados', true)"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="wc-fuera" value="no" onchange="toggleField('fld-wc-fuera-estados', false)"> No</label>
+        </div>
+        <div class="error-text">Elige una opción.</div>
+      </div>
+      <div class="form-row" id="fld-wc-fuera-estados" style="display:none;"><label>¿En qué estado(s)? <span style="font-weight:400; color:var(--slate-light);">(opcional)</span></label><input type="text" id="wc-fuera-estados" maxlength="80" autocomplete="off"></div>
+      <div class="form-row" id="fld-wc-subs-actual">
+        <label>¿Tiene actualmente algún subcontratista?</label>
+        <div class="radio-group">
+          <label class="radio-pill"><input type="radio" name="wc-subs-actual" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="wc-subs-actual" value="no"> No</label>
+        </div>
+        <div class="error-text">Elige una opción.</div>
+      </div>
+      <div class="form-row" id="fld-wc-subs-futuro">
+        <label>¿Tiene previsto contratar subcontratistas en los próximos 12 meses?</label>
+        <div class="radio-group">
+          <label class="radio-pill"><input type="radio" name="wc-subs-futuro" value="si"> Sí</label>
+          <label class="radio-pill"><input type="radio" name="wc-subs-futuro" value="no"> No</label>
+        </div>
+        <div class="error-text">Elige una opción.</div>
+      </div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep(wcOwnerCount() > 1 ? 'wco' : 'wc3')">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wc4')">Continuar</button>
+      </div>
+    </section>
+
+    <section class="step" data-step="wc5">
+      <h2>Últimos datos</h2>
+      <p class="step-sub">Estos dos son opcionales. Si no los tienes a la mano, puedes seguir.</p>
+      <div class="form-row" id="fld-wc-ein"><label>Número de identificación de empleador de la compañía (EIN / FEIN) <span style="font-weight:400; color:var(--slate-light);">(opcional)</span></label><input type="text" id="wc-ein" inputmode="numeric" maxlength="10" placeholder="12-3456789" oninput="wcEin(this)" autocomplete="off"><div class="error-text">El EIN tiene 9 dígitos (ej. 12-3456789). Si no lo tienes, déjalo en blanco.</div></div>
+      <div class="form-row"><label>¿Necesitas alguna cantidad de cobertura en específico? <span style="font-weight:400; color:var(--slate-light);">(opcional)</span></label><textarea id="wc-cobertura" rows="3" maxlength="300" placeholder="Si no, déjalo en blanco y nosotros te recomendamos."></textarea></div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-secondary" onclick="goToStep('wc4')">Atrás</button>
+        <button type="button" class="btn-primary" onclick="wcNext('wc5')">Continuar</button>
+      </div>
+    </section>
+    <!-- ===== WC-HTML-END ===== -->
+
     <!-- ===== PASO 5: Enviar ===== -->
     <section class="step" data-step="5">
       <h2>¡Ya casi terminamos!</h2>
@@ -823,10 +941,13 @@
   const EO_PRODUCTS = ['errores_omisiones'];
   const MEDICO_PRODUCTS = ['medico'];
   const VIDA_PRODUCTS = ['vida'];
+  const WC_PRODUCTS = ['workers_comp'];
+  // A la función del servidor se le manda un producto que ya conoce; el detalle va en las notas.
+  function serverProducto(v){ return v === 'workers_comp' ? 'comercial_negocios' : v; }
   const PRODUCT_LABELS = {
     auto_personal: 'Auto personal', auto_comercial: 'Auto comercial / Trucking', motocicleta: 'Motocicleta',
     home: 'Casa (Home)', vida: 'Vida', medico: 'Salud / Médico', renters: 'Inquilinos',
-    errores_omisiones: 'Errores y Omisiones (E&O)', comercial_negocios: 'Seguro comercial para negocios', otro: 'Otro'
+    errores_omisiones: 'Errores y Omisiones (E&O)', comercial_negocios: 'Seguro comercial para negocios', workers_comp: 'Worker Compensation', otro: 'Otro'
   };
   const COVERAGE_LABELS = { liability: 'Liability', full: 'Full Coverage', otra: 'Otra' };
   const ID_TYPE_LABELS = { licencia: 'Licencia de conducir', matricula: 'Matrícula', pasaporte: 'Pasaporte' };
@@ -845,6 +966,7 @@
     if(EO_PRODUCTS.includes(producto)) return 'eo';
     if(MEDICO_PRODUCTS.includes(producto)) return 'medico';
     if(VIDA_PRODUCTS.includes(producto)) return 'vida';
+    if(WC_PRODUCTS.includes(producto)) return 'wc';
     return 'simple';
   }
 
@@ -852,12 +974,17 @@
   const STEP_PLANS = {
     auto:     [{id:'1', label:'Tu información'}, {id:'2', label:'Preguntas'}, {id:'3', label:'Conductores'}, {id:'4', label:'Vehículos'}, {id:'5', label:'Enviar'}],
     detalles: [{id:'1', label:'Tu información'}, {id:'detalles', label:'Detalles'}, {id:'5', label:'Enviar'}],
-    simple:   [{id:'1', label:'Tu información'}, {id:'5', label:'Enviar'}]
+    simple:   [{id:'1', label:'Tu información'}, {id:'5', label:'Enviar'}],
+    wc:       [{id:'1', label:'Tu info'}, {id:'wc1', label:'Negocio'}, {id:'wc2', label:'Ubicación'}, {id:'wc3', label:'Personal'}, {id:'wc4', label:'Contratos'}, {id:'wc5', label:'Final'}, {id:'5', label:'Enviar'}]
   };
 
   function getStepPlan(){
     if(flowType === 'auto') return STEP_PLANS.auto;
     if(flowType === 'simple') return STEP_PLANS.simple;
+    if(flowType === 'wc'){
+      if(wcOwnerCount() < 2) return STEP_PLANS.wc;
+      const p = STEP_PLANS.wc.slice(); p.splice(4, 0, {id:'wco', label:'Dueños'}); return p;
+    }
     return STEP_PLANS.detalles; // renters, home, eo, medico
   }
 
@@ -888,6 +1015,7 @@
     const wrap = document.getElementById('stepsIndicator');
     if(flowType === 'simple'){ wrap.innerHTML = ''; return; }
     const plan = getStepPlan();
+    wrap.classList.toggle('many', plan.length > 6);
     const currentIndex = plan.findIndex(s => s.id === String(currentStep));
     wrap.innerHTML = plan.map((step, i) => {
       let cls = 'dot';
@@ -908,6 +1036,7 @@
     if(n === 3) renderDrivers();
     if(n === 4) renderVehicles();
     if(n === 'detalles') showDetallesForFlow();
+    if(n === 'wco') wcRenderOwners();
     if(n === 5) renderSummary();
   }
 
@@ -980,7 +1109,7 @@
       direccion: buildFullAddress(),
       telefono: document.getElementById('p1-telefono').value.trim(),
       correo: document.getElementById('p1-correo').value.trim(),
-      producto: document.getElementById('p1-producto').value,
+      producto: serverProducto(document.getElementById('p1-producto').value),
       comentarios: document.getElementById('p1-comentarios').value.trim()
     };
   }
@@ -1080,7 +1209,7 @@
     }
     if(continueBtn){ continueBtn.disabled = false; continueBtn.textContent = 'Continuar'; }
 
-    goToStep(flowType === 'auto' ? 2 : 'detalles');
+    goToStep(flowType === 'auto' ? 2 : flowType === 'wc' ? 'wc1' : 'detalles');
     if(flowType === 'auto'){
       document.getElementById('lbl-seguro6meses').textContent = producto === 'motocicleta'
         ? '¿Has tenido seguro de motocicleta de forma continua en los últimos 6 meses?'
@@ -1376,6 +1505,175 @@
     const tipo = document.querySelector('input[name="v-tipo"]:checked')?.value;
     document.getElementById('fld-v-terminoanios').style.display = tipo === 'termino' ? 'block' : 'none';
   }
+
+  // ===== WC-JS-START: Worker Compensation (varios pasos) =====
+  // Las respuestas viajan dentro del texto de «comentarios» (como «Etiqueta: valor»), que es el único campo de
+  // texto libre que la función submit-public-quote ya guarda siempre. Así no depende de cambiar esa función.
+  function wcClean(v){ return String(v == null ? '' : v).replace(/\s+/g, ' ').replace(/-{2,}/g, '-').trim(); }
+  function wcVal(id){ const el = document.getElementById(id); return el ? wcClean(el.value) : ''; }
+  function wcRadio(name){ const r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
+  function wcInt(el){ el.value = el.value.replace(/\D/g, '').slice(0, 5); }
+  function wcMoney(el){
+    let v = el.value.replace(/[^\d.]/g, ''); const i = v.indexOf('.');
+    if(i !== -1) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '').slice(0, 2);
+    el.value = v.slice(0, 14);
+  }
+  function wcEin(el){
+    const d = el.value.replace(/\D/g, '').slice(0, 9);
+    el.value = d.length > 2 ? d.slice(0, 2) + '-' + d.slice(2) : d;
+  }
+  function wcIsMoney(v){ return v !== '' && /^\d+(\.\d{1,2})?$/.test(v); }
+  function wcFmtMoney(v){ const n = parseFloat(v); return isNaN(n) ? v : '$' + n.toLocaleString('en-US', { minimumFractionDigits: (v.indexOf('.') !== -1 ? 2 : 0), maximumFractionDigits: 2 }); }
+  function wcEsc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  // Copia al paso de la compañía lo que la persona ya escribió en el primer paso (se puede cambiar después)
+  function wcUseStep1(){
+    const set = (id, v) => { const el = document.getElementById(id); if(el && v) el.value = v; };
+    set('wc-direccion', document.getElementById('p1-direccion').value.trim());
+    set('wc-direccion2', document.getElementById('p1-direccion2').value.trim());
+    set('wc-ciudad', document.getElementById('p1-ciudad').value.trim());
+    set('wc-estado', document.getElementById('p1-estado').value.trim());
+    set('wc-zip', document.getElementById('p1-zip').value.trim().slice(0, 5));
+    set('wc-telefono', document.getElementById('p1-telefono').value.trim());
+    set('wc-correo', document.getElementById('p1-correo').value.trim());
+  }
+
+
+  // ----- Propietarios: el porcentaje de cada uno y los datos de contacto de los demás -----
+  const WC_MAX_OWNERS = 10;
+  let wcOwners = []; // [{nombre, pct, tel, correo}] — el [0] es quien llena el formulario (solo su porcentaje)
+  function wcOwnerCount(){ const v = parseInt(wcVal('wc-propietarios'), 10); return (v >= 1 && v <= WC_MAX_OWNERS) ? v : 1; }
+  function wcOwnerGet(i){ while(wcOwners.length <= i) wcOwners.push({ nombre: '', pct: '', tel: '', correo: '' }); return wcOwners[i]; }
+  function wcOwnerSet(i, k, v){ wcOwnerGet(i)[k] = v; wcOwnersTotal(); }
+  function wcOwnerPct(el, i){
+    let v = el.value.replace(/[^\d.]/g, ''); const d = v.indexOf('.');
+    if(d !== -1) v = v.slice(0, d + 1) + v.slice(d + 1).replace(/\./g, '').slice(0, 2);
+    el.value = v.slice(0, 6); wcOwnerSet(i, 'pct', el.value);
+  }
+  function wcOwnerPhone(el, i){ maskPhone(el); wcOwnerSet(i, 'tel', el.value); }
+  function wcOwnersSum(){ let t = 0; for(let i = 0; i < wcOwnerCount(); i++) t += parseFloat(wcOwnerGet(i).pct) || 0; return Math.round(t * 100) / 100; }
+  function wcOwnersTotal(){
+    const el = document.getElementById('wco-total'); if(!el) return;
+    const t = wcOwnersSum(); el.textContent = 'Suma de porcentajes: ' + t + '%' + (Math.abs(t - 100) < 0.009 ? ' ✓' : ' (debe ser 100%)');
+    el.style.color = Math.abs(t - 100) < 0.009 ? 'var(--success)' : 'var(--slate)';
+  }
+  function wcRenderOwners(){
+    const n = wcOwnerCount(); const box = document.getElementById('wco-list'); if(!box) return;
+    const yo = wcClean(document.getElementById('p1-nombre').value + ' ' + document.getElementById('p1-apellido').value);
+    let h = '';
+    for(let i = 0; i < n; i++){
+      const o = wcOwnerGet(i);
+      h += `<div style="border:1px solid var(--line); border-radius:12px; padding:14px 14px 4px; margin-bottom:14px;">
+        <div style="font-weight:700; color:var(--navy); margin-bottom:10px;">Propietario ${i + 1}${i === 0 ? ' — tú (' + wcEsc(yo) + ')' : ''}</div>`;
+      if(i > 0){
+        h += `<div class="form-row" id="fld-wco-${i}-nombre"><label>Nombre completo</label><input type="text" id="wco-${i}-nombre" maxlength="80" value="${wcEsc(o.nombre)}" oninput="wcOwnerSet(${i}, 'nombre', this.value)" autocomplete="off"><div class="error-text">Escribe el nombre.</div></div>`;
+      }
+      h += `<div class="form-row" id="fld-wco-${i}-pct"><label>${i === 0 ? 'Tu porcentaje de la compañía (%)' : 'Porcentaje de la compañía (%)'}</label><input type="text" id="wco-${i}-pct" inputmode="decimal" maxlength="6" value="${wcEsc(o.pct)}" oninput="wcOwnerPct(this, ${i})" autocomplete="off"><div class="error-text">Escribe un porcentaje mayor a 0 y hasta 100.</div></div>`;
+      if(i > 0){
+        h += `<div class="form-row-2">
+          <div class="form-row" id="fld-wco-${i}-tel"><label>Teléfono</label><input type="tel" id="wco-${i}-tel" placeholder="(555) 555-5555" maxlength="14" value="${wcEsc(o.tel)}" oninput="wcOwnerPhone(this, ${i})" autocomplete="off"><div class="error-text">El teléfono debe tener 10 dígitos.</div></div>
+          <div class="form-row" id="fld-wco-${i}-correo"><label>Correo electrónico</label><input type="email" id="wco-${i}-correo" maxlength="120" value="${wcEsc(o.correo)}" oninput="wcOwnerSet(${i}, 'correo', this.value)" autocomplete="off"><div class="error-text">Escribe un correo válido.</div></div>
+        </div>`;
+      }
+      h += '</div>';
+    }
+    box.innerHTML = h; wcOwnersTotal();
+  }
+  function wcNextId(step){ if(step === 'wc3') return wcOwnerCount() > 1 ? 'wco' : 'wc4'; return { wc1: 'wc2', wc2: 'wc3', wco: 'wc4', wc4: 'wc5', wc5: 5 }[step]; }
+  function wcValidate(step){
+    let ok = true;
+    const need = (fld, bad) => { markFieldError(fld, bad); if(bad) ok = false; };
+    if(step === 'wc1'){
+      need('fld-wc-nombre', !wcVal('wc-nombre'));
+      need('fld-wc-tipo', !wcVal('wc-tipo'));
+      need('fld-wc-trabajo', !wcVal('wc-trabajo'));
+    } else if(step === 'wc2'){
+      need('fld-wc-direccion', !wcVal('wc-direccion'));
+      need('fld-wc-ciudad', !wcVal('wc-ciudad'));
+      need('fld-wc-estado', !wcVal('wc-estado'));
+      need('fld-wc-zip', !/^\d{5}$/.test(wcVal('wc-zip')));
+      need('fld-wc-casa', !wcRadio('wc-casa'));
+      need('fld-wc-telefono', wcVal('wc-telefono').replace(/\D/g, '').length !== 10);
+      need('fld-wc-correo', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(wcVal('wc-correo')));
+    } else if(step === 'wc3'){
+      const prop = wcVal('wc-propietarios'), emp = wcVal('wc-empleados');
+      need('fld-wc-propietarios', !/^\d+$/.test(prop) || parseInt(prop, 10) < 1 || parseInt(prop, 10) > WC_MAX_OWNERS);
+      need('fld-wc-empleados', !/^\d+$/.test(emp));
+      need('fld-wc-nomina', !wcIsMoney(wcVal('wc-nomina')));
+      need('fld-wc-ingresos', !wcIsMoney(wcVal('wc-ingresos')));
+    } else if(step === 'wco'){
+      const n = wcOwnerCount();
+      for(let i = 0; i < n; i++){
+        const o = wcOwnerGet(i); const pct = parseFloat(o.pct);
+        need(`fld-wco-${i}-pct`, !(pct > 0 && pct <= 100));
+        if(i > 0){
+          need(`fld-wco-${i}-nombre`, !wcClean(o.nombre));
+          need(`fld-wco-${i}-tel`, wcClean(o.tel).replace(/\D/g, '').length !== 10);
+          need(`fld-wco-${i}-correo`, !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(wcClean(o.correo)));
+        }
+      }
+      need('fld-wco-total', Math.abs(wcOwnersSum() - 100) >= 0.009);
+    } else if(step === 'wc4'){
+      need('fld-wc-fuera', !wcRadio('wc-fuera'));
+      need('fld-wc-subs-actual', !wcRadio('wc-subs-actual'));
+      need('fld-wc-subs-futuro', !wcRadio('wc-subs-futuro'));
+    } else if(step === 'wc5'){
+      const ein = wcVal('wc-ein');
+      need('fld-wc-ein', ein !== '' && ein.replace(/\D/g, '').length !== 9);
+    }
+    return ok;
+  }
+  function wcNext(step){
+    if(!wcValidate(step)){ showTopError('Completa los campos marcados en rojo antes de continuar.'); return; }
+    goToStep(wcNextId(step));
+  }
+
+  // Lista ordenada [etiqueta, valor] de todo lo que contestó (las etiquetas se muestran tal cual en el CRM)
+  function wcEntries(){
+    const e = [];
+    const add = (l, v) => { if(v !== '' && v != null) e.push([l, v]); };
+    const yn = v => v === 'si' ? 'Sí' : 'No';
+    add('Nombre de la compañía', wcVal('wc-nombre'));
+    add('DBA (nombre comercial)', wcVal('wc-dba'));
+    add('Tipo de negocio', wcVal('wc-tipo'));
+    add('Trabajo principal', wcVal('wc-trabajo'));
+    const calle = [wcVal('wc-direccion'), wcVal('wc-direccion2')].filter(Boolean).join(', ');
+    add('Dirección de la compañía', calle + ', ' + wcVal('wc-ciudad') + ', ' + wcVal('wc-estado') + ' ' + wcVal('wc-zip'));
+    add('Oficina en casa', yn(wcRadio('wc-casa')));
+    add('Teléfono de la compañía', wcVal('wc-telefono'));
+    add('Correo de la compañía', wcVal('wc-correo'));
+    add('Cantidad de propietarios', wcVal('wc-propietarios'));
+    const nOw = wcOwnerCount();
+    const yo = wcClean(document.getElementById('p1-nombre').value + ' ' + document.getElementById('p1-apellido').value);
+    const pctTxt = (v) => String(parseFloat(v)) + '%';
+    add('Propietario 1', yo + ' (quien llena el formulario) | ' + (nOw > 1 ? pctTxt(wcOwnerGet(0).pct) : '100%'));
+    for(let i = 1; i < nOw; i++){
+      const o = wcOwnerGet(i);
+      add('Propietario ' + (i + 1), [wcClean(o.nombre), pctTxt(o.pct), wcClean(o.tel), wcClean(o.correo)].join(' | '));
+    }
+    add('Cantidad de empleados', wcVal('wc-empleados'));
+    add('Nómina esperada (12 meses)', wcFmtMoney(wcVal('wc-nomina')));
+    add('Ingresos esperados (12 meses)', wcFmtMoney(wcVal('wc-ingresos')));
+    const fuera = wcRadio('wc-fuera'), fueraEst = wcVal('wc-fuera-estados');
+    add('Personas contratadas fuera de Texas', yn(fuera) + (fuera === 'si' && fueraEst ? ' (' + fueraEst + ')' : ''));
+    add('Subcontratistas actuales (1099)', yn(wcRadio('wc-subs-actual')));
+    add('Subcontratistas próximos 12 meses (1099)', yn(wcRadio('wc-subs-futuro')));
+    add('EIN / FEIN', wcVal('wc-ein'));
+    add('Cobertura específica solicitada', wcVal('wc-cobertura'));
+    return e;
+  }
+  function wcNotesText(){
+    const userComment = (document.getElementById('p1-comentarios').value || '').replace(/\s+/g, ' ').trim();
+    const lines = [];
+    if(userComment) lines.push('Comentarios del cliente: ' + userComment);
+    lines.push('Seguro solicitado: Worker Compensation');
+    wcEntries().forEach(([l, v]) => lines.push(l + ': ' + v));
+    return lines.join('\n');
+  }
+  function wcSummaryHTML(){
+    return wcEntries().map(([l, v]) => `<div style="margin-top:4px;"><strong>${wcEsc(l)}:</strong> ${wcEsc(v)}</div>`).join('');
+  }
+  // ===== WC-JS-END =====
 
   function onDetallesContinue(){
     let ok = true;
@@ -1696,6 +1994,8 @@
       const vehicles = collectVehicles();
       html += `<div style="margin-top:8px;"><strong>Conductores:</strong> ${drivers.length}</div>`;
       html += `<div><strong>Vehículos:</strong> ${vehicles.length}</div>`;
+    } else if(flowType === 'wc'){
+      html += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">${wcSummaryHTML()}</div>`;
     } else if(flowType !== 'simple'){
       html += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">${renderDetallesSummaryHTML()}</div>`;
     }
@@ -1705,6 +2005,7 @@
 
   function goBackFromStep5(){
     if(flowType === 'auto') goToStep(4);
+    else if(flowType === 'wc') goToStep('wc5');
     else if(flowType !== 'simple') goToStep('detalles');
     else goToStep(1);
   }
@@ -1728,6 +2029,8 @@
       };
       payload.conductores = collectDrivers();
       payload.vehiculos = collectVehicles();
+    } else if(flowType === 'wc'){
+      payload.principal.comentarios = wcNotesText();
     } else if(flowType !== 'simple'){
       payload.detalles = collectDetalles();
     }
