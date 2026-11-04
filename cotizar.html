@@ -742,6 +742,24 @@
       <p class="step-sub">Para cotizar tu Worker Compensation necesitamos conocer tu compañía. Son pocas preguntas, una pantalla a la vez.</p>
       <div class="form-row" id="fld-wc-nombre"><label>Nombre de la compañía</label><input type="text" id="wc-nombre" maxlength="120" autocomplete="organization"><div class="error-text">Escribe el nombre de la compañía.</div></div>
       <div class="form-row"><label>Doing Business As (DBA) <span style="font-weight:400; color:var(--slate-light);">(si tiene un nombre comercial distinto — opcional)</span></label><input type="text" id="wc-dba" maxlength="120"></div>
+      <div class="form-row" id="fld-wc-entidad">
+        <label>¿Qué tipo de compañía es?</label>
+        <select id="wc-entidad" onchange="toggleField('fld-wc-entidad-otro', this.value === 'otro')">
+          <option value="">Selecciona una opción</option>
+          <option value="llc">LLC (Limited Liability Company)</option>
+          <option value="s_corp">S-Corporation</option>
+          <option value="c_corp">C-Corporation</option>
+          <option value="partnership">Partnership (Sociedad)</option>
+          <option value="lp">Limited Partnership (LP)</option>
+          <option value="llp">Limited Liability Partnership (LLP)</option>
+          <option value="propietario_unico">Sole Proprietorship (Propietario único)</option>
+          <option value="sin_fines">Nonprofit (Sin fines de lucro)</option>
+          <option value="fideicomiso">Trust (Fideicomiso)</option>
+          <option value="otro">Otro</option>
+        </select>
+        <div class="error-text">Selecciona el tipo de compañía.</div>
+      </div>
+      <div class="form-row" id="fld-wc-entidad-otro" style="display:none;"><label>Especifica el tipo de compañía</label><input type="text" id="wc-entidad-otro" maxlength="60" autocomplete="off"><div class="error-text">Escribe cuál es.</div></div>
       <div class="form-row" id="fld-wc-tipo"><label>¿Qué tipo de negocio es?</label><input type="text" id="wc-tipo" maxlength="120" placeholder="Ej. construcción, restaurante, limpieza"><div class="error-text">Cuéntanos qué tipo de negocio es.</div></div>
       <div class="form-row" id="fld-wc-trabajo"><label>¿Cuál es el tipo de trabajo principal que realizan?</label><textarea id="wc-trabajo" rows="3" maxlength="300" placeholder="Ej. instalación de techos, cocina y servicio de mesas, limpieza de oficinas…"></textarea><div class="error-text">Describe el trabajo principal que realizan.</div></div>
       <div class="nav-buttons">
@@ -1541,6 +1559,7 @@
 
   // ----- Propietarios: el porcentaje de cada uno y los datos de contacto de los demás -----
   const WC_MAX_OWNERS = 10;
+  const WC_ENTIDAD_LABELS = { llc: 'LLC', s_corp: 'S-Corporation', c_corp: 'C-Corporation', partnership: 'Partnership (Sociedad)', lp: 'Limited Partnership (LP)', llp: 'Limited Liability Partnership (LLP)', propietario_unico: 'Sole Proprietorship (Propietario único)', sin_fines: 'Nonprofit (Sin fines de lucro)', fideicomiso: 'Trust (Fideicomiso)', otro: 'Otro' };
   let wcOwners = []; // [{nombre, pct, tel, correo}] — el [0] es quien llena el formulario (solo su porcentaje)
   function wcOwnerCount(){ const v = parseInt(wcVal('wc-propietarios'), 10); return (v >= 1 && v <= WC_MAX_OWNERS) ? v : 1; }
   function wcOwnerGet(i){ while(wcOwners.length <= i) wcOwners.push({ nombre: '', pct: '', tel: '', correo: '' }); return wcOwners[i]; }
@@ -1585,6 +1604,8 @@
     const need = (fld, bad) => { markFieldError(fld, bad); if(bad) ok = false; };
     if(step === 'wc1'){
       need('fld-wc-nombre', !wcVal('wc-nombre'));
+      need('fld-wc-entidad', !wcVal('wc-entidad'));
+      need('fld-wc-entidad-otro', wcVal('wc-entidad') === 'otro' && !wcVal('wc-entidad-otro'));
       need('fld-wc-tipo', !wcVal('wc-tipo'));
       need('fld-wc-trabajo', !wcVal('wc-trabajo'));
     } else if(step === 'wc2'){
@@ -1635,6 +1656,8 @@
     const yn = v => v === 'si' ? 'Sí' : 'No';
     add('Nombre de la compañía', wcVal('wc-nombre'));
     add('DBA (nombre comercial)', wcVal('wc-dba'));
+    const ent = wcVal('wc-entidad');
+    add('Tipo de compañía', (WC_ENTIDAD_LABELS[ent] || ent) + (ent === 'otro' && wcVal('wc-entidad-otro') ? ' (' + wcVal('wc-entidad-otro') + ')' : ''));
     add('Tipo de negocio', wcVal('wc-tipo'));
     add('Trabajo principal', wcVal('wc-trabajo'));
     const calle = [wcVal('wc-direccion'), wcVal('wc-direccion2')].filter(Boolean).join(', ');
