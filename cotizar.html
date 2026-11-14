@@ -960,6 +960,45 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
   // mandamos ese slug en el payload para que este cliente le llegue exclusivamente a ese agente.
   const AGENT_SLUG = new URLSearchParams(window.location.search).get('agente') || null;
 
+  // ===== SOURCE-DETECT-START =====
+  // ¿De qué red social llegó esta persona? Solo se anota si es una de estas redes; un link directo no anota nada.
+  // Orden: 1) etiqueta en el link (?fuente=tiktok), 2) lo guardado al entrar al sitio, 3) página que la envió, 4) navegador interno de la app.
+  const GM_SOCIAL = { facebook:'Facebook', instagram:'Instagram', tiktok:'TikTok', youtube:'YouTube', linkedin:'LinkedIn', whatsapp:'WhatsApp' };
+  function gmNormSource(v){
+    v = String(v || '').toLowerCase().trim();
+    if(!v) return '';
+    if(/^(fb|facebook|face|meta)$|facebook\.com|fb\.com|fb\.me|fbclid/.test(v)) return 'facebook';
+    if(/^(ig|insta|instagram)$|instagram\.com|l\.instagram/.test(v)) return 'instagram';
+    if(/^(tt|tik[\s_-]?tok|tiktok)$|tiktok\.com/.test(v)) return 'tiktok';
+    if(/^(yt|youtube)$|youtube\.com|youtu\.be/.test(v)) return 'youtube';
+    if(/^(li|linkedin)$|linkedin\.com|lnkd\.in/.test(v)) return 'linkedin';
+    if(/^(wa|whatsapp)$|whatsapp\.com|wa\.me/.test(v)) return 'whatsapp';
+    return '';
+  }
+  function gmDetectSource(){
+    let found = '';
+    try{
+      const q = new URLSearchParams(location.search);
+      ['fuente','source','utm_source','ref'].some(k => { const s = gmNormSource(q.get(k)); if(s){ found = s; return true; } return false; });
+    }catch(e){}
+    if(!found){ try{ found = gmNormSource(sessionStorage.getItem('gm_src')); }catch(e){} }
+    if(!found){
+      try{
+        if(document.referrer){ const h = new URL(document.referrer).hostname; if(h !== location.hostname) found = gmNormSource(h); }
+      }catch(e){}
+    }
+    if(!found){
+      const ua = navigator.userAgent || '';
+      if(/FBAN|FBAV|FB_IAB/.test(ua)) found = 'facebook';
+      else if(/Instagram/i.test(ua)) found = 'instagram';
+      else if(/musical_ly|BytedanceWebview|TikTok/i.test(ua)) found = 'tiktok';
+      else if(/LinkedInApp/i.test(ua)) found = 'linkedin';
+    }
+    if(found){ try{ sessionStorage.setItem('gm_src', found); }catch(e){} }
+    return found;
+  }
+  // ===== SOURCE-DETECT-END =====
+
   // Si venimos de la página de un agente, la burbuja de "¿Prefieres hablar
   // con un agente ahora?" debe mostrar el teléfono de ESE agente (el que puso
   // en su perfil), no el número general de la agencia.
@@ -1248,6 +1287,7 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
         createdClientId = data.client_id;
         createdQuoteId = data.quote_id;
         recordSmsConsent(createdClientId, createdQuoteId);
+        saveFormDetails(createdClientId, createdQuoteId, true);
       }
     } catch(err){
       // Si falla aquí, no pasa nada grave: el envío final (Paso 5) va a crear
@@ -2411,6 +2451,11 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
   // del cliente en el CRM (función de la base save_web_form_details). No se mezcla con las cotizaciones del equipo.
   // Nunca bloquea ni muestra error.
   function formDetailsText(){
+    const src = gmDetectSource();
+    const from = src ? 'Llegó desde: ' + GM_SOCIAL[src] + '\n' : '';
+    return from + formDetailsBody();
+  }
+  function formDetailsBody(){
     const producto = document.getElementById('p1-producto').value;
     if(flowType === 'auto') return autoNotesText();
     if(flowType === 'wc') return wcNotesText();
@@ -2425,16 +2470,17 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
     });
     return lines.join('\n');
   }
-  async function saveFormDetails(clientId, quoteId){
+  async function saveFormDetails(clientId, quoteId, sourceOnly){
     try{
       if(!clientId) return;
-      const details = formDetailsText().trim();
-      if(!details) return;
+      const src = gmDetectSource();
+      const details = sourceOnly ? '' : formDetailsText().trim();
+      if(!details && !src) return;
       const producto = document.getElementById('p1-producto').value;
       await fetch(SUPABASE_URL + '/rest/v1/rpc/save_web_form_details', {
         method: 'POST', keepalive: true,
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-        body: JSON.stringify({ p_client: clientId, p_quote: quoteId || null, p_phone: document.getElementById('p1-telefono').value.trim(), p_product: PRODUCT_LABELS[producto] || producto, p_details: details.slice(0, 8000) })
+        body: JSON.stringify({ p_client: clientId, p_quote: quoteId || null, p_phone: document.getElementById('p1-telefono').value.trim(), p_product: PRODUCT_LABELS[producto] || producto, p_details: details.slice(0, 8000), p_source: src || null })
       });
     } catch(err){ console.error('save_web_form_details:', err); }
   }

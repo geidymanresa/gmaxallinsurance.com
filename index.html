@@ -1134,6 +1134,26 @@
 </script>
 <!-- ===== GMAX-SITE-END ===== -->
 
+<script>
+// Guarda de qué red social llegó la persona (si fue de una), para que la página de cotizar lo sepa aunque llegue desde otra página del sitio.
+(function(){
+  try{
+    var n=function(v){v=String(v||'').toLowerCase().trim();if(!v)return'';
+      if(/^(fb|facebook|face|meta)$|facebook\.com|fb\.com|fb\.me/.test(v))return'facebook';
+      if(/^(ig|insta|instagram)$|instagram\.com/.test(v))return'instagram';
+      if(/^(tt|tik[\s_-]?tok|tiktok)$|tiktok\.com/.test(v))return'tiktok';
+      if(/^(yt|youtube)$|youtube\.com|youtu\.be/.test(v))return'youtube';
+      if(/^(li|linkedin)$|linkedin\.com|lnkd\.in/.test(v))return'linkedin';
+      if(/^(wa|whatsapp)$|whatsapp\.com|wa\.me/.test(v))return'whatsapp';return'';};
+    if(sessionStorage.getItem('gm_src'))return;
+    var q=new URLSearchParams(location.search),f='';
+    ['fuente','source','utm_source','ref'].some(function(k){var s=n(q.get(k));if(s){f=s;return true;}return false;});
+    if(!f&&document.referrer){var h=new URL(document.referrer).hostname;if(h!==location.hostname)f=n(h);}
+    if(!f){var ua=navigator.userAgent||'';if(/FBAN|FBAV|FB_IAB/.test(ua))f='facebook';else if(/Instagram/i.test(ua))f='instagram';else if(/musical_ly|BytedanceWebview|TikTok/i.test(ua))f='tiktok';else if(/LinkedInApp/i.test(ua))f='linkedin';}
+    if(f)sessionStorage.setItem('gm_src',f);
+  }catch(e){}
+})();
+</script>
 <!-- GMAX-I18N-START -->
 <style>
 /* botón ES | EN */
