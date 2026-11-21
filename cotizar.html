@@ -188,6 +188,11 @@
         <div class="form-row" id="fld-telefono"><label>Teléfono</label><input type="tel" id="p1-telefono" placeholder="(555) 555-5555" maxlength="14" oninput="maskPhone(this)"><div class="error-text">El teléfono debe tener 10 dígitos.</div></div>
         <div class="form-row" id="fld-correo"><label>Correo electrónico</label><input type="email" id="p1-correo" placeholder="tu@correo.com"><div class="error-text">Escribe un correo válido.</div></div>
       </div>
+      <!-- Idioma preferido: en este idioma salen los textos (SMS) y correos. Se llena solo con el idioma de la página (ES | EN) mientras no lo cambies a mano. -->
+      <div class="form-row" id="fld-idioma" data-i18n-skip>
+        <label for="p1-idioma">Idioma preferido / Preferred language</label>
+        <select id="p1-idioma"><option value="es">Español</option><option value="en">English</option></select>
+      </div>
       <div class="form-row" id="fld-producto">
         <label>¿Qué seguro estás necesitando?</label>
         <select id="p1-producto">
@@ -1173,6 +1178,32 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
     } catch(err){ console.error('record_web_sms_consent:', err); }
   }
   // ===== SMS-CONSENT-JS-END =====
+  // ===== LEAD-SMS-JS-START =====
+  // Idioma preferido + mensaje de bienvenida por texto (web_lead_sms en Supabase). Nunca bloquea ni muestra errores al cliente.
+  //   etapa 'partial'  = terminó la primera parte (si no termina el formulario, sale un texto a los N minutos)
+  //   etapa 'complete' = envió el formulario completo (cancela el anterior y sale el de «solicitud completa»)
+  // Solo se manda texto si marcó la casilla de SMS (el permiso se registra antes, en recordSmsConsent).
+  let idiomaTouched = false;
+  function leadLang(){ const e = document.getElementById('p1-idioma'); return (e && e.value === 'en') ? 'en' : 'es'; }
+  (function(){
+    const e = document.getElementById('p1-idioma'); if(!e) return;
+    const sync = function(){ if(!idiomaTouched) e.value = (window.GMAX_LANG && window.GMAX_LANG.get() === 'en') ? 'en' : 'es'; };
+    e.addEventListener('change', function(){ idiomaTouched = true; });
+    document.addEventListener('gmax:langchange', sync);
+    window.addEventListener('load', sync);
+  })();
+  async function webLeadSms(stage, clientId, quoteId){
+    try{
+      if(!clientId) return;
+      await fetch(SUPABASE_URL + '/rest/v1/rpc/web_lead_sms', {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({ p_client: clientId, p_quote: quoteId || null, p_phone: document.getElementById('p1-telefono').value.trim(), p_lang: leadLang(), p_stage: stage })
+      });
+    } catch(err){ console.error('web_lead_sms:', err); }
+  }
+  // ===== LEAD-SMS-JS-END =====
+
 
   let createdClientId = null;
   let createdQuoteId = null;
@@ -1286,7 +1317,7 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
       if(res.ok && !data.error){
         createdClientId = data.client_id;
         createdQuoteId = data.quote_id;
-        recordSmsConsent(createdClientId, createdQuoteId);
+        recordSmsConsent(createdClientId, createdQuoteId).then(function(){ return webLeadSms('partial', createdClientId, createdQuoteId); });
         saveFormDetails(createdClientId, createdQuoteId, true);
       }
     } catch(err){
@@ -2437,6 +2468,7 @@ const VEH_DATA = {"cars":{"ACURA":[["CL","1990-1999,2001-2003"],["Integra","1990
         throw new Error(data.error || 'No se pudo enviar tu solicitud.');
       }
       await recordSmsConsent(data.client_id || createdClientId, data.quote_id || createdQuoteId);
+      await webLeadSms('complete', data.client_id || createdClientId, data.quote_id || createdQuoteId);
       await saveFormDetails(data.client_id || createdClientId, data.quote_id || createdQuoteId);
       showThankYou(producto);
       notifyNewLead(payload);
